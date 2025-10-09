@@ -56,7 +56,7 @@ export default function SignIn() {
 
   return (
 <>
-    <RedirectIfAuthenticatedClient />
+    {/* <RedirectIfAuthenticatedClient /> */}
 
     <div className="flex min-h-screen">
 
