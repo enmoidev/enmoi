@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { generatePdf } from "@/lib/generate-pdf/generatePdf";
 import { PrismaClient } from "@prisma/client";
 import { evaluateFormula } from "@/lib/computeFunctions/computeFunctions";
@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 
 const prisma = new PrismaClient();
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
 
   try {
 

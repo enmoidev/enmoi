@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { generateAptitudeCardPDF } from "@/lib/generate-pdf/generateAptitudeCardPDF";
 import { PdfAptitude } from "@/types/pdf";
 import { getAuthSession } from "@/lib/auth-utils/getAuthSession";
@@ -7,7 +7,7 @@ import { requireRole } from "@/lib/auth-utils/requireRole";
 // Indique à Next.js d'utiliser Node.js au lieu de Edge
 export const runtime = "nodejs";
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   
   try {
 
