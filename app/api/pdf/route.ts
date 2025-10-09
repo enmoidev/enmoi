@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     });
 
     // --- Calculer les nombres et associer les aptitudes correspondantes ---
-    const aptitudes: any[] = [];
+    const aptitudes: PdfAptitude[] = [];
 
     const symbolicRoleArray = ["Ta colonne vertébrale","Ta boussole","Ta destination","Ton moteur","Ta vitrine","Ton énergie générationnelle","Ton inspiratrice"]
 
