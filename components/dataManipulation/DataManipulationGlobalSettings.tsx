@@ -65,7 +65,7 @@ export default function DataManipulationGlobalSettings() {
 
       <CardHeader>
         <CardTitle className="text-2xl text-neutral-700">Paramètres globaux</CardTitle>
-        <p className="text-neutral-700">Modifier les paramètres généraux de l'application et le mot de passe administrateur</p>
+        <p className="text-neutral-700">Modifier les paramètres généraux de l&apos;application et le mot de passe administrateur</p>
       </CardHeader>
 
       <CardContent className="space-y-6">
@@ -76,7 +76,7 @@ export default function DataManipulationGlobalSettings() {
           <>
             {/* --- Global Settings --- */}
             <div className="flex flex-col gap-2 justify-center">
-              <Label className="pb-2">Nombre d'ambassadeurs</Label>
+              <Label className="pb-2">Nombre d&apos;ambassadeurs</Label>
               <Input
                 className="md:w-1/3 w-full"
                 type="number"

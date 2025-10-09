@@ -21,7 +21,7 @@ export function renderAptitudeCard(doc: PDFKit.PDFDocument, data: PdfAptitude) {
   y = y + 40;
 
   doc.font("boldAktiv").fontSize(14);
-  let labelWidth = doc.widthOfString(label);
+  const labelWidth = doc.widthOfString(label);
 
   doc.font("boldItalicAktiv").fontSize(14);
   const valueWidth = doc.widthOfString(value);

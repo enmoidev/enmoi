@@ -189,7 +189,7 @@ const handleGeneratePDF = async () => {
         {selectedAptitude && (
           <section>
             <h2 className="text-lg font-semibold mb-2 text-primary italic">
-              Étape 2 : Modifier l'aptitude #{selectedAptitude.number}
+              Étape 2 : Modifier l&apos;aptitude #{selectedAptitude.number}
             </h2>
 
             <div className="space-y-6 border rounded-lg p-4">
@@ -330,7 +330,7 @@ const handleGeneratePDF = async () => {
         {selectedAptitude && (
           <section className="flex flex-col">
             <h2 className="text-lg font-semibold mb-2 text-primary italic">
-              Étape 3 : Générer la fiche et vérifier les informations de l'aptitude #{selectedAptitude.number}
+              Étape 3 : Générer la fiche et vérifier les informations de l&apos;aptitude #{selectedAptitude.number}
             </h2>
 
             <Label className="pb-2">Définir le rôle symbolique</Label>
@@ -358,7 +358,7 @@ const handleGeneratePDF = async () => {
               onClick={handleGeneratePDF}
               className="mt-2 w-auto self-center flex items-center gap-2"
             >
-              <FileDown className="w-4 h-4" /> <span className="pb-1">Générer le PDF de la fiche de l'aptitude</span>
+              <FileDown className="w-4 h-4" /> <span className="pb-1">Générer le PDF de la fiche de l&apos;aptitude</span>
             </Button>
           </section>
         )}
@@ -369,7 +369,7 @@ const handleGeneratePDF = async () => {
         {selectedAptitude && (
           <section className="flex flex-col">
             <h2 className="text-lg font-semibold mb-2 text-primary italic">
-              Étape 4 : Enregistrer les modifications de l'aptitude #{selectedAptitude.number}
+              Étape 4 : Enregistrer les modifications de l&apos;aptitude #{selectedAptitude.number}
             </h2>
             <Button
               onClick={handleSave}

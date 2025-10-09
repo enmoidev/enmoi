@@ -16,8 +16,7 @@ export const NavbarDesktopAdmin = ({ user  }: Props) => {
 
     const pathname = usePathname();
     const segments = pathname.split("/").filter(Boolean);
-    const isReservationPath = segments.includes("reservations");
-    let basePath = "/" + segments.slice(0, isReservationPath ? 3 : 2).join("/");
+    const basePath = "/" + segments.slice(0, 2).join("/");
 
     const handleLogout = async () => {
 

@@ -5,7 +5,6 @@ import Image from "next/image";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Textarea } from "../ui/textarea";
 import { toast } from "react-hot-toast";
 import { Calculator, Loader2, Save } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
@@ -122,7 +121,7 @@ export default function DataManipulationFunctions() {
     <Card className="w-full">
       <CardHeader>
         <CardTitle className="text-2xl text-neutral-700">Gestion des formules mathématiques</CardTitle>
-        <p className="text-neutral-700">sélectionner une formule, la modifier et enregistrer les modifications. Générer les 7 nombres à partir d'une date de naissance.</p>
+        <p className="text-neutral-700">sélectionner une formule, la modifier et enregistrer les modifications. Générer les 7 nombres à partir d&apos;une date de naissance.</p>
       </CardHeader>
 
       <Image
@@ -208,7 +207,7 @@ export default function DataManipulationFunctions() {
         {selectedFunction && (
           <section>
             <h2 className="text-lg font-semibold mb-2 text-primary italic">Étape 4 : Générer les 7 nombres</h2>
-            <Label className="pb-2">Sélection d'une date de naissance</Label>
+            <Label className="pb-2">Sélection d&apos;une date de naissance</Label>
             <div className="flex flex-col gap-2">
               <Input
                 type="date"

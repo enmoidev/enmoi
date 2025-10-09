@@ -17,7 +17,7 @@ export default async function Home() {
         <Image src="/logo/logo-inyou.png" alt="logo de InYou" width={180} height={38} priority className="w-[180px] h-auto"/>
 
         <p className="tracking-wide text-md text-center sm:text-left text-black">
-          Bienvenue dans l'application <b>inYou</b>.
+          Bienvenue dans l&apos;application <b>inYou</b>.
         </p>
 
         <div className="flex gap-4 items-center flex-col sm:flex-row">
