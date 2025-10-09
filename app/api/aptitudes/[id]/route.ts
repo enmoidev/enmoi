@@ -6,9 +6,10 @@ import { requireRole } from "@/lib/auth-utils/requireRole";
 
 const prisma = new PrismaClient();
 
-export async function GET(req : NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: Request) {
 
-  const { id } = params;
+  const url = new URL(req.url);
+  const id = url.pathname.split("/").pop();
 
   try {
 
@@ -33,9 +34,10 @@ export async function GET(req : NextRequest, { params }: { params: { id: string 
 
 }
 
-export async function PUT(req : NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: Request) {
 
-  const { id } = params;
+  const url = new URL(req.url);
+  const id = url.pathname.split("/").pop();
 
   try {
 

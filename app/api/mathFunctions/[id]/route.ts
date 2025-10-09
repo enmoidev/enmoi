@@ -5,7 +5,10 @@ import { requireRole } from "@/lib/auth-utils/requireRole";
 
 const prisma = new PrismaClient();
 
-export async function GET(req : NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: Request) {
+
+  const url = new URL(req.url);
+  const id = url.pathname.split("/").pop();
 
   try {
 
@@ -13,7 +16,7 @@ export async function GET(req : NextRequest, { params }: { params: { id: string 
     requireRole(session, ["ADMIN"]);
 
     const mathFunction = await prisma.mathFunction.findUnique({
-      where: { id: params.id },
+      where: { id: id },
     });
 
     if (!mathFunction) {
@@ -31,7 +34,10 @@ export async function GET(req : NextRequest, { params }: { params: { id: string 
 
 }
 
-export async function PUT(req : NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: Request) {
+
+  const url = new URL(req.url);
+  const id = url.pathname.split("/").pop();
 
   try {
 
@@ -40,7 +46,7 @@ export async function PUT(req : NextRequest, { params }: { params: { id: string 
     
     const data = await req.json();
     const updated = await prisma.mathFunction.update({
-      where: { id: params.id },
+      where: { id: id },
       data,
     });
     return NextResponse.json(updated);
