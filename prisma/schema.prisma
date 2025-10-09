@@ -1,0 +1,132 @@
+// This is Prisma schema file,
+// generate new prisma file --> npx prisma generate + (npx @better-auth/cli generate if init betterauth prisma)
+// see data --> npx prisma studio
+
+// migration dev --> npx prisma migrate dev --name describe-your-change (.env de dev)
+// migration prod --> npm run migrate:postgres (.env de prod) --> deploy all migrations ever created on production database
+
+// to reset db --> delete migration --> npx prisma migrate reset --> npx prisma generate --> npx prisma migrate dev --name init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+
+model User {
+  id            String        @id @default(uuid())
+  firstName     String?
+  lastName      String?
+  name          String
+  email         String        @unique
+  emailVerified Boolean       @default(false)
+  image         String?
+  country       String?
+  city          String?
+  birthDate     DateTime?
+  gender        String?
+  isAmbassador  Boolean       @default(false)  // if true user can create just one BirthProfile with ambassador priviligy and after return to false
+  tokenBalance  Int           @default(0)
+  role          Role          @default(CUSTOMER)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @default(now()) @updatedAt
+
+  sessions      Session[]
+  accounts      Account[]
+  birthProfiles BirthProfile[]
+
+  @@map("user")
+}
+
+model Aptitude {
+  id                String   @id @default(cuid())
+  number            Int
+  title             String
+  livingDefinition  String
+  emblematicText    String
+  associatedStrengths String[]
+  vigilanceZones    String[]
+  keywords          String[]
+}
+
+model MathFunction {
+  id         String @id @default(cuid())
+  number     Int
+  expression String
+}
+
+model GlobalSettings {
+  id                  String @id @default(cuid())
+  ambassadorAccounts  Int
+}
+
+model BirthProfile {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName         String
+  lastName          String
+  birthDate         DateTime
+  gender            String
+  pdfLink           String
+  shortComment      String?
+  longComment       String?
+  isAmbassador      Boolean  @default(false) // if this BirthProfile is ambassador choice so is free
+  paymentPlan       Int      @default(0) // 0 = not paid, 1/2/3 = plan chosen
+  quizAnswer        Int?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now()) @updatedAt
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  @@map("verification")
+}
