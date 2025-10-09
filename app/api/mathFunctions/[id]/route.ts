@@ -1,11 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { getAuthSession } from "@/lib/auth-utils/getAuthSession";
 import { requireRole } from "@/lib/auth-utils/requireRole";
 
 const prisma = new PrismaClient();
 
-export async function GET(_: Request, { params }: { params: { id: string } }) {
+export async function GET(req : NextRequest, { params }: { params: { id: string } }) {
 
   try {
 
@@ -31,7 +31,7 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
 
 }
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req : NextRequest, { params }: { params: { id: string } }) {
 
   try {
 

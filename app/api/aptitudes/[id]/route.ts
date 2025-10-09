@@ -1,14 +1,14 @@
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { getAuthSession } from "@/lib/auth-utils/getAuthSession";
 import { requireRole } from "@/lib/auth-utils/requireRole";
 
 const prisma = new PrismaClient();
 
-export async function GET(context: { params: Promise<{ id: string }> }) {
+export async function GET(req : NextRequest, { params }: { params: { id: string } }) {
 
-  const { id } = await context.params;
+  const { id } = params;
 
   try {
 
@@ -33,16 +33,16 @@ export async function GET(context: { params: Promise<{ id: string }> }) {
 
 }
 
-export async function PUT(request: Request,context: { params: Promise<{ id: string }> }) {
+export async function PUT(req : NextRequest, { params }: { params: { id: string } }) {
 
-  const { id } = await context.params;
+  const { id } = params;
 
   try {
 
     const session = await getAuthSession();
     requireRole(session, ["ADMIN"]);
 
-    const data = await request.json();
+    const data = await req.json();
 
     const updated = await prisma.aptitude.update({
       where: { id },
