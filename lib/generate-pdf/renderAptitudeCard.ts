@@ -13,19 +13,40 @@ export async function renderAptitudeCard(doc: PDFKit.PDFDocument, data: PdfAptit
   
   const isProd = process.env.NODE_ENV === "production";
 
-  let imageBuffer: Buffer;
+  let backgroundImageBuffer: Buffer;
+  let arrowImageBuffer: Buffer;
+  let keywordsImageBuffer: Buffer;
 
   if (isProd) {
-    const imageUrl = `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://www.myinyou.com"}/pdf-design/fiche-aptitude.png`;
-    const response = await axios.get(imageUrl, { responseType: "arraybuffer" });
-    imageBuffer = Buffer.from(response.data);
-  } else {
-    const localPath = path.resolve("./public/pdf-design/fiche-aptitude.png");
-    imageBuffer = fs.readFileSync(localPath);
+
+    const backgroundImageUrl = `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://www.myinyou.com"}/pdf-design/fiche-aptitude.png`;
+    const responseImageBackgroundUrl = await axios.get(backgroundImageUrl, { responseType: "arraybuffer" });
+    backgroundImageBuffer = Buffer.from(responseImageBackgroundUrl.data);
+
+    const arrowImageUrl = `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://www.myinyou.com"}/pdf-design/Flèche-texte-emblématique.png`;
+    const responseArrowImageUrl = await axios.get(arrowImageUrl, { responseType: "arraybuffer" });
+    arrowImageBuffer = Buffer.from(responseArrowImageUrl.data);
+
+    const keywordsImageUrl = `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://www.myinyou.com"}/pdf-design/Design-mots-clés.png`;
+    const responseKeywordsImageUrl = await axios.get(keywordsImageUrl, { responseType: "arraybuffer" });
+    keywordsImageBuffer = Buffer.from(responseKeywordsImageUrl.data);
+
+  } 
+  
+  else {
+
+    const localPathBackgroundImage = path.resolve("./public/pdf-design/fiche-aptitude.png");
+    backgroundImageBuffer = fs.readFileSync(localPathBackgroundImage);
+
+    const localPathArrowImage = path.resolve("./public/pdf-design/Flèche-texte-emblématique.png");
+    arrowImageBuffer = fs.readFileSync(localPathArrowImage);
+
+    const localPathKeyWordsImage = path.resolve("./public/pdf-design/Design-mots-clés.png");
+    keywordsImageBuffer = fs.readFileSync(localPathKeyWordsImage);
+
   }
 
-  // 🔹 Affiche l'image (identique dans les deux cas)
-  doc.image(imageBuffer, 0, 0, {
+  doc.image(backgroundImageBuffer, 0, 0, {
     width: doc.page.width,
     height: doc.page.height,
   });
@@ -98,14 +119,13 @@ export async function renderAptitudeCard(doc: PDFKit.PDFDocument, data: PdfAptit
   const labelX = (pageWidth - labelWidthActual) / 2;
   const labelY = y;
 
-  const arrowImagePath = path.resolve("./public/pdf-design/Flèche-texte-emblématique.png");
   const desiredWidth = labelWidthActual + 50;
   const originalWidth = 1751;
   const originalHeight = 384;
   const desiredHeight = (desiredWidth * originalHeight) / originalWidth;
   const imageX = labelX + labelWidthActual / 2 - desiredWidth / 2;
   const imageY = labelY + doc.currentLineHeight() / 2 - desiredHeight / 2;
-  doc.image(arrowImagePath, imageX, imageY, { width: desiredWidth, height: desiredHeight });
+  doc.image(arrowImageBuffer, imageX, imageY, { width: desiredWidth, height: desiredHeight });
 
   doc.text(labelText, labelX, labelY);
 
@@ -253,7 +273,6 @@ export async function renderAptitudeCard(doc: PDFKit.PDFDocument, data: PdfAptit
   }
 
   // 7. Mots-clés
-  const keywordsImagePath = path.resolve("./public/pdf-design/Design-mots-clés.png");
   const originalKWWidth = 1612;
   const originalKWHeight = 251;
   const desiredKWWidth = pageWidth * 0.55;
@@ -263,7 +282,7 @@ export async function renderAptitudeCard(doc: PDFKit.PDFDocument, data: PdfAptit
   const kwX = (pageWidth - desiredKWWidth) / 2;
   const kwY = doc.page.height - desiredKWHeight - bottomMargin;
 
-  doc.image(keywordsImagePath, kwX, kwY, {
+  doc.image(keywordsImageBuffer, kwX, kwY, {
     width: desiredKWWidth,
     height: desiredKWHeight,
   });
