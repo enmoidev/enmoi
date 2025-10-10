@@ -3,9 +3,11 @@ import path from "path";
 import { renderAptitudeCard } from "./renderAptitudeCard";
 import { PdfAptitude } from "@/types/pdf";
 
-export function generateAptitudeCardPDF(data: PdfAptitude): Promise<Buffer> {
+export async function generateAptitudeCardPDF(data: PdfAptitude): Promise<Buffer> {
 
-  return new Promise((resolve, reject) => {
+  return new Promise<Buffer>(async (resolve, reject) => {
+
+    try {
 
     const defaultFont = path.join(process.cwd(), "public", "fonts", "AktivGrotesk-Regular.ttf");
 
@@ -37,8 +39,12 @@ export function generateAptitudeCardPDF(data: PdfAptitude): Promise<Buffer> {
     doc.on("error", reject);
 
     // === Fiche aptitude ===
-    renderAptitudeCard(doc, data);
+    await renderAptitudeCard(doc, data);
 
     doc.end();
+    }
+    catch(err){
+      reject(err)
+    }
   });
 }
