@@ -66,10 +66,10 @@ export async function POST(req: Request) {
 
       const num = evaluateFormula(func.expression,day,month,year,year1,year2,year3,year4,day1,day2,month1,month2) ?? 0;
 
-      const aptitude = allAptitudes.find(a => a.number === num);
+      // const aptitude = allAptitudes.find(a => a.number === num);
 
       // to test, choice first seven aptitudes
-      //const aptitude = allAptitudes.find(a => a.number === i+1);
+      const aptitude = allAptitudes.find(a => a.number === i+1);
 
       if (aptitude){
         const aptitudeWithsymbolicRole:PdfAptitude = {...aptitude,symbolicRole: symbolicRoleArray[i]};
