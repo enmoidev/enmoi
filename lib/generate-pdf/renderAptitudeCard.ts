@@ -2,15 +2,33 @@
 
 import { PdfAptitude } from "@/types/pdf";
 import path from "path";
+import fs from "fs";
+import axios from "axios";
 
-export function renderAptitudeCard(doc: PDFKit.PDFDocument, data: PdfAptitude) {
+export async function renderAptitudeCard(doc: PDFKit.PDFDocument, data: PdfAptitude) {
 
   const turquoise_color = "#28939f";
   const pageWidth = doc.page.width;
   let y = 75;
   
-  const page1Image = path.resolve("./public/pdf-design/fiche-aptitude.png");
-  doc.image(page1Image, 0, 0, { width: doc.page.width, height: doc.page.height });
+  const isProd = process.env.NODE_ENV === "production";
+
+  let imageBuffer: Buffer;
+
+  if (isProd) {
+    const imageUrl = `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://www.myinyou.com"}/pdf-design/fiche-aptitude.png`;
+    const response = await axios.get(imageUrl, { responseType: "arraybuffer" });
+    imageBuffer = Buffer.from(response.data);
+  } else {
+    const localPath = path.resolve("./public/pdf-design/fiche-aptitude.png");
+    imageBuffer = fs.readFileSync(localPath);
+  }
+
+  // 🔹 Affiche l'image (identique dans les deux cas)
+  doc.image(imageBuffer, 0, 0, {
+    width: doc.page.width,
+    height: doc.page.height,
+  });
 
   // 1. Titre principal
   doc.font("boldPhilosopher").fontSize(35).fillColor("white").text(`${data.title || ""}`, 0, y, { width: pageWidth, align: "center" });
