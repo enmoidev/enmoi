@@ -25,10 +25,6 @@ export default function RootLayout({children,}: Readonly<{children: React.ReactN
         <Toaster />
 
         <main>{children}</main>
-        
-        <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-          <p className="text-sm text-gray-500">© 2025 inYou. Tous droits réservés.</p>
-        </footer>
 
       </body>
 

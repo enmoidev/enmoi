@@ -27,7 +27,7 @@ export const ResetPasswordEmail = ({username,resetLink,}: BetterAuthResetPasswor
 						<Img src={imageurl} alt="Logo inYou" width="120" height="auto" className="mx-auto my-[20px]"/>
 
 						<Heading className="text-black text-[24px] font-normal text-center p-0 my-[30px] mx-0">
-							Réinitialisez votre <strong>mot de passe</strong> depuis l&apos;application de réservation de Animaphot.
+							Réinitialisez votre <strong>mot de passe</strong> depuis l&apos;application de inYou.
 						</Heading>
 
 						<Text className="text-black text-[14px] leading-[24px]">
@@ -35,12 +35,12 @@ export const ResetPasswordEmail = ({username,resetLink,}: BetterAuthResetPasswor
 						</Text>
 
 						<Text className="text-black text-[14px] leading-[24px]">
-							Nous avons reçu une demande de réinitialisation du mot de passe de votre compte de réservation Animaphot Si vous n&apos;êtes pas à l&apos;origine de cette demande, vous pouvez ignorer cet e-mail en toute sécurité.
+							Nous avons reçu une demande de réinitialisation du mot de passe de votre compte inYou Si vous n&apos;êtes pas à l&apos;origine de cette demande, vous pouvez ignorer cet e-mail en toute sécurité.
 						</Text>
 
 						<Section className="text-center mt-[32px] mb-[32px]">
 							<Button
-								className="bg-[#000000] rounded text-white text-[12px] font-semibold no-underline text-center px-5 py-3"
+								className="bg-primary rounded text-white text-[12px] font-semibold no-underline text-center px-5 py-3"
 								href={resetLink}
 							>
 								Réinitialiser le mot de passe
