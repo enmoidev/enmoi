@@ -23,11 +23,11 @@ export async function renderAptitudeCard(doc: PDFKit.PDFDocument, data: PdfAptit
     const responseImageBackgroundUrl = await axios.get(backgroundImageUrl, { responseType: "arraybuffer" });
     backgroundImageBuffer = Buffer.from(responseImageBackgroundUrl.data);
 
-    const arrowImageUrl = `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://www.myinyou.com"}/pdf-design/Flèche-texte-emblématique.png`;
+    const arrowImageUrl = `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://www.myinyou.com"}/pdf-design/fleche-texte-emblematique.png`;
     const responseArrowImageUrl = await axios.get(arrowImageUrl, { responseType: "arraybuffer" });
     arrowImageBuffer = Buffer.from(responseArrowImageUrl.data);
 
-    const keywordsImageUrl = `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://www.myinyou.com"}/pdf-design/Design-mots-clés.png`;
+    const keywordsImageUrl = `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://www.myinyou.com"}/pdf-design/design-mots-cles.png`;
     const responseKeywordsImageUrl = await axios.get(keywordsImageUrl, { responseType: "arraybuffer" });
     keywordsImageBuffer = Buffer.from(responseKeywordsImageUrl.data);
 
@@ -38,10 +38,10 @@ export async function renderAptitudeCard(doc: PDFKit.PDFDocument, data: PdfAptit
     const localPathBackgroundImage = path.resolve("./public/pdf-design/fiche-aptitude.png");
     backgroundImageBuffer = fs.readFileSync(localPathBackgroundImage);
 
-    const localPathArrowImage = path.resolve("./public/pdf-design/Flèche-texte-emblématique.png");
+    const localPathArrowImage = path.resolve("./public/pdf-design/fleche-texte-emblematique.png");
     arrowImageBuffer = fs.readFileSync(localPathArrowImage);
 
-    const localPathKeyWordsImage = path.resolve("./public/pdf-design/Design-mots-clés.png");
+    const localPathKeyWordsImage = path.resolve("./public/pdf-design/design-mots-cles.png");
     keywordsImageBuffer = fs.readFileSync(localPathKeyWordsImage);
 
   }
