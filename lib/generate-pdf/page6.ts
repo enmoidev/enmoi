@@ -1,5 +1,7 @@
 import path from "path";
 import { fitTextToWidth } from "../utils";
+import axios from "axios";
+import fs from "fs";
 
 /**
  * Dessine une aptitude dans un rounded rectangle adaptatif
@@ -46,20 +48,34 @@ function drawAptitude(
   });
 }
 
-export function renderPage6(
-  doc: PDFKit.PDFDocument,
-  firstName: string,
-  lastName: string,
-  aptitudesTitle: string[]
-) {
+export async function renderPage6(doc: PDFKit.PDFDocument, firstName: string, lastName: string, aptitudesTitle: string[]) {
+
+  const isProd = process.env.NODE_ENV === "production";
+
+  let backgroundImageBuffer: Buffer;
+
+  if (isProd) {
+
+    const backgroundImageUrl = `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://www.myinyou.com"}/pdf-design/page-6.png`;
+    const responseImageBackgroundUrl = await axios.get(backgroundImageUrl, { responseType: "arraybuffer" });
+    backgroundImageBuffer = Buffer.from(responseImageBackgroundUrl.data);
+
+  } 
+  
+  else {
+
+    const localPathBackgroundImage = path.resolve("./public/pdf-design/page-6.png");
+    backgroundImageBuffer = fs.readFileSync(localPathBackgroundImage);
+
+  }
+
   const pageWidth = doc.page.width;
   const pageHeight = doc.page.height;
   let y = 420;
   const turquoise_color = "#28939f";
 
   // === Fond de page ===
-  const backgroundPath = path.resolve("./public/pdf-design/page-6.png");
-  doc.image(backgroundPath, 0, 0, { width: pageWidth, height: pageHeight });
+  doc.image(backgroundImageBuffer, 0, 0, { width: pageWidth, height: pageHeight });
 
   // === Prénom + Nom ===
   const offsetX = 6;

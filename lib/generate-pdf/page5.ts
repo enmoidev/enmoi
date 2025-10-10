@@ -1,8 +1,37 @@
 import path from "path";
 import { countCharacters, formatDateFR, simplifyNameForDesign } from "../utils";
+import axios from "axios";
+import fs from "fs";
 
-export function renderPage5(doc: PDFKit.PDFDocument,firstName: string,lastName: string,birthDate: string,birthPlace: string
-) {
+export async function renderPage5(doc: PDFKit.PDFDocument,firstName: string,lastName: string,birthDate: string,birthPlace: string) {
+
+  const isProd = process.env.NODE_ENV === "production";
+
+  let backgroundImageBuffer: Buffer;
+  let arrowCircleImageBuffer: Buffer;
+
+  if (isProd) {
+
+    const backgroundImageUrl = `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://www.myinyou.com"}/pdf-design/page-5.png`;
+    const responseImageBackgroundUrl = await axios.get(backgroundImageUrl, { responseType: "arraybuffer" });
+    backgroundImageBuffer = Buffer.from(responseImageBackgroundUrl.data);
+
+    const arrowCircleImageUrl = `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://www.myinyou.com"}/pdf-design/fleche-demi-cercle.png`;
+    const responseArrowCircleImageUrl = await axios.get(arrowCircleImageUrl, { responseType: "arraybuffer" });
+    arrowCircleImageBuffer = Buffer.from(responseArrowCircleImageUrl.data);
+
+  } 
+  
+  else {
+
+    const localPathBackgroundImage = path.resolve("./public/pdf-design/page-5.png");
+    backgroundImageBuffer = fs.readFileSync(localPathBackgroundImage);
+
+    const localPathArrowImage = path.resolve("./public/pdf-design/fleche-demi-cercle.png");
+    arrowCircleImageBuffer = fs.readFileSync(localPathArrowImage);
+
+  }
+
   const turquoise_color = "#28939f";
   const pageWidth = doc.page.width;
   let y = 450;
@@ -32,7 +61,6 @@ export function renderPage5(doc: PDFKit.PDFDocument,firstName: string,lastName: 
   const blockHeight = line1Height + 5 + line2Height; // 5pt = espacement entre lignes
 
   // === Superposition du PNG de flèche ===
-  const arrowPath = path.resolve("./public/pdf-design/Flèche-demi-cercle.png");
   const arrowOriginalWidth = 1702;
   const arrowOriginalHeight = 767;
 
@@ -49,7 +77,7 @@ export function renderPage5(doc: PDFKit.PDFDocument,firstName: string,lastName: 
   
   // Centrer horizontalement par rapport au bloc texte
   const arrowX = startX + (totalWidth - arrowWidth) / 2;
-  doc.image(arrowPath, arrowX-165-countCharactersName, y, { width: arrowWidth, height: finalArrowHeight });
+  doc.image(arrowCircleImageBuffer, arrowX-165-countCharactersName, y, { width: arrowWidth, height: finalArrowHeight });
 
   // === Dessiner le texte EXACTEMENT COMME AVANT ===
   // Label "Carte personnelle de"

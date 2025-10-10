@@ -5,59 +5,70 @@ import { PdfData } from "@/types/pdf";
 import { renderPage5 } from "./page5";
 import { renderPage6 } from "./page6";
 
-export function generatePdf(data: PdfData): Promise<Buffer> {
+export async function generatePdf(data: PdfData): Promise<Buffer> {
 
-  return new Promise((resolve, reject) => {
+  return new Promise<Buffer>(async (resolve, reject) => {
 
-    const defaultFont = path.join(process.cwd(), "public", "fonts", "AktivGrotesk-Regular.ttf");
+    try{
 
-    const doc = new PDFDocument({ size: "A4", font: defaultFont });
+      const defaultFont = path.join(process.cwd(), "public", "fonts", "AktivGrotesk-Regular.ttf");
 
-    const fontRegularAktiv = path.join(process.cwd(), "public", "fonts", "AktivGrotesk-Regular.ttf");
-    const fontBoldAktiv = path.join(process.cwd(), "public", "fonts", "AktivGrotesk-XBold.ttf");
-    const fontBoldItalicAktiv = path.join(process.cwd(), "public", "fonts", "AktivGrotesk-XBoldItalic.ttf");
-    const fontMediumAktiv = path.join(process.cwd(), "public", "fonts", "AktivGrotesk-Medium.ttf");
-    const fontMediumItalicAktiv = path.join(process.cwd(), "public", "fonts", "AktivGrotesk-MediumItalic.ttf");
-    const fontBoldPhilosopher = path.join(process.cwd(), "public", "fonts", "Philosopher-Bold.ttf");
-    const fontSemiBoldAktiv = path.join(process.cwd(), "public", "fonts", "AktivGrotesk-SemiBold.ttf");
-    const fontItalicAktiv = path.join(process.cwd(), "public", "fonts", "AktivGrotesk-Italic.ttf");
-    const fontRosaliaRegular = path.join(process.cwd(), "public", "fonts", "Rosalia.otf");
+      const doc = new PDFDocument({ size: "A4", font: defaultFont });
 
-    doc.registerFont("regularAktiv", fontRegularAktiv);
-    doc.registerFont("boldAktiv", fontBoldAktiv);
-    doc.registerFont("boldItalicAktiv", fontBoldItalicAktiv);
-    doc.registerFont("mediumAktiv", fontMediumAktiv);
-    doc.registerFont("mediumItalicAktiv", fontMediumItalicAktiv);
-    doc.registerFont("boldPhilosopher", fontBoldPhilosopher);
-    doc.registerFont("semiboldAktiv", fontSemiBoldAktiv);
-    doc.registerFont("italicAktiv", fontItalicAktiv);
-    doc.registerFont("rosaliaRegular", fontRosaliaRegular);
+      const fontRegularAktiv = path.join(process.cwd(), "public", "fonts", "AktivGrotesk-Regular.ttf");
+      const fontBoldAktiv = path.join(process.cwd(), "public", "fonts", "AktivGrotesk-XBold.ttf");
+      const fontBoldItalicAktiv = path.join(process.cwd(), "public", "fonts", "AktivGrotesk-XBoldItalic.ttf");
+      const fontMediumAktiv = path.join(process.cwd(), "public", "fonts", "AktivGrotesk-Medium.ttf");
+      const fontMediumItalicAktiv = path.join(process.cwd(), "public", "fonts", "AktivGrotesk-MediumItalic.ttf");
+      const fontBoldPhilosopher = path.join(process.cwd(), "public", "fonts", "Philosopher-Bold.ttf");
+      const fontSemiBoldAktiv = path.join(process.cwd(), "public", "fonts", "AktivGrotesk-SemiBold.ttf");
+      const fontItalicAktiv = path.join(process.cwd(), "public", "fonts", "AktivGrotesk-Italic.ttf");
+      const fontRosaliaRegular = path.join(process.cwd(), "public", "fonts", "Rosalia.otf");
 
-    const buffers: Buffer[] = [];
-    doc.on("data", buffers.push.bind(buffers));
-    doc.on("end", () => resolve(Buffer.concat(buffers)));
-    doc.on("error", reject);
+      doc.registerFont("regularAktiv", fontRegularAktiv);
+      doc.registerFont("boldAktiv", fontBoldAktiv);
+      doc.registerFont("boldItalicAktiv", fontBoldItalicAktiv);
+      doc.registerFont("mediumAktiv", fontMediumAktiv);
+      doc.registerFont("mediumItalicAktiv", fontMediumItalicAktiv);
+      doc.registerFont("boldPhilosopher", fontBoldPhilosopher);
+      doc.registerFont("semiboldAktiv", fontSemiBoldAktiv);
+      doc.registerFont("italicAktiv", fontItalicAktiv);
+      doc.registerFont("rosaliaRegular", fontRosaliaRegular);
 
-    const aptitudesTitles = data.aptitudes.map(a => a.title);
+      const buffers: Buffer[] = [];
+      doc.on("data", buffers.push.bind(buffers));
+      doc.on("end", () => resolve(Buffer.concat(buffers)));
+      doc.on("error", reject);
 
-    // === page 5 ===
-    renderPage5(doc, data.firstName, data.lastName, data.birthDate, data.birthPlace);
+      const aptitudesTitles = data.aptitudes.map(a => a.title);
 
-    // === page 6 ===
-    doc.addPage();
-    renderPage6(doc, data.firstName, data.lastName, aptitudesTitles);
+      // === page 5 ===
+      await renderPage5(doc, data.firstName, data.lastName, data.birthDate, data.birthPlace);
 
-    // === Fiches des aptitudes ===
-    doc.addPage();
-    data.aptitudes.forEach((aptitude, index) => {
+      // === page 6 ===
+      doc.addPage();
+      await renderPage6(doc, data.firstName, data.lastName, aptitudesTitles);
 
-      renderAptitudeCard(doc, aptitude);
+      // === Fiches des aptitudes ===
+      doc.addPage();
 
-      if (index < data.aptitudes.length - 1) {
-        doc.addPage();
+      for (let i = 0; i < data.aptitudes.length; i++) {
+
+        const aptitude = data.aptitudes[i];
+        
+        await renderAptitudeCard(doc, aptitude);
+
+        if (i < data.aptitudes.length - 1) {
+          doc.addPage();
+        }
+
       }
-    });
 
-    doc.end();
+      doc.end();
+
+    }
+    catch(err){
+      reject(err)
+    }
   });
 }
