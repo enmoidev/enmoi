@@ -18,6 +18,7 @@ export default function DataManipulationAptitudes() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [symbolicRole, setSymbolicRole] = useState<string>("Ta colonne vertébrale");
+  const [generatingPDF, setGeneratingPDF] = useState(false);
 
   useEffect(() => {
 
@@ -86,9 +87,12 @@ const handleGeneratePDF = async () => {
 
   if (!selectedAptitude) return;
 
-  const aptitudeToSend:PdfAptitude = { ...selectedAptitude, symbolicRole };
-
   try {
+
+    setGeneratingPDF(true);
+
+    const aptitudeToSend:PdfAptitude = { ...selectedAptitude, symbolicRole };
+
     const res = await fetch("/api/pdf/aptitudeCard", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -116,6 +120,10 @@ const handleGeneratePDF = async () => {
   catch (err) {
     console.error(err);
     toast.error("Impossible de générer le PDF");
+  }
+
+  finally{
+    setGeneratingPDF(false);
   }
 
 };
@@ -357,8 +365,17 @@ const handleGeneratePDF = async () => {
               size={"lg"}
               onClick={handleGeneratePDF}
               className="mt-2 w-auto self-center flex items-center gap-2"
+              disabled={generatingPDF} // 🔹 empêche de cliquer plusieurs fois
             >
-              <FileDown className="w-4 h-4" /> <span className="pb-1">Générer le PDF de la fiche de l&apos;aptitude</span>
+              {generatingPDF ? (
+                <>
+                  <Loader2 className="animate-spin w-4 h-4" /> <span className="pb-1">Générer le PDF de la fiche de l&apos;aptitude</span>
+                </>
+              ) : (
+                <>
+                  <FileDown className="w-4 h-4" /> <span className="pb-1">Générer le PDF de la fiche de l&apos;aptitude</span>
+                </>
+              )}
             </Button>
           </section>
         )}
