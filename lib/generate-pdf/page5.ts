@@ -37,8 +37,7 @@ export async function renderPage5(doc: PDFKit.PDFDocument,firstName: string,last
   let y = 450;
 
   // === Fond de page ===
-  const backgroundPath = path.resolve("./public/pdf-design/page-5.png");
-  doc.image(backgroundPath, 0, 0, { width: doc.page.width, height: doc.page.height });
+  doc.image(backgroundImageBuffer, 0, 0, { width: doc.page.width, height: doc.page.height });
 
   // Texte "Carte personnelle de" + prénom/nom sur une seule ligne
   const labelText = "Carte personnelle de";
