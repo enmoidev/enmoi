@@ -1,40 +1,66 @@
+// Carte de navigation du tableau de bord, vers un écran du back-office
+
 import Link from "next/link";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
+import { ArrowRight, type LucideIcon } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { NavInfoCard } from "../../types/navInfoCard";
 
-export default function LinkNavCard({ title, shortDescription, content, href, d }: NavInfoCard) {
+type Props = Omit<NavInfoCard, "d"> & {
+  icon: LucideIcon;
+  /// Met la carte en avant : elle occupe deux colonnes et adopte le lavis turquoise.
+  featured?: boolean;
+};
 
+export default function LinkNavCard({
+  title,
+  shortDescription,
+  content,
+  href,
+  icon: Icon,
+  featured = false,
+}: Props) {
   return (
+    <Link
+      href={href}
+      className="group block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2"
+    >
+      <Card
+        className={`border-line hover:border-brand h-full gap-4 py-5 transition-colors duration-200 ${
+          featured ? "bg-brand-veil" : ""
+        }`}
+      >
+        <CardHeader className="gap-0 px-5">
+          <div className="flex items-start gap-3">
+            <span
+              aria-hidden="true"
+              className="bg-brand-wash text-brand-deep flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+            >
+              <Icon className="h-5 w-5" />
+            </span>
 
-    <Link href={href} className="w-full md:w-1/3 group" >
-
-        <Card className="border border-transparent hover:border-[var(--primary)] transition-all duration-300 ease-in-out hover:shadow-lg h-full" >
-
-            <CardHeader>
-
-                <div className="flex flex-row items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" 
-                        className={"size-5 transition-colors  md:group-hover:text-[var(--primary)] md:text-gray-400 text-[var(--primary)]"}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d={d} />
-                    </svg>
-                    <CardTitle className="text-lg md:text-xl">{title}</CardTitle>
-                </div>
-
-                <CardDescription className="text-xs md:text-sm">
+            <div className="min-w-0">
+              <CardTitle className="font-display text-ink text-xl leading-snug">
+                {title}
+              </CardTitle>
+              <p className="eyebrow text-brand-deep mt-1.5 opacity-80">
                 {shortDescription}
-                </CardDescription>
-            </CardHeader>
+              </p>
+            </div>
+          </div>
+        </CardHeader>
 
-            <CardContent>
+        <CardContent className="flex flex-col gap-4 px-5">
+          <p className="text-ink-muted text-[0.9375rem]">{content}</p>
 
-                <p className="text-base">{content}</p>
-                
-            </CardContent>
-
-        </Card>
-
-        </Link>
-
+          <span className="text-primary inline-flex items-center gap-1.5 text-sm font-semibold">
+            Ouvrir
+            <ArrowRight
+              aria-hidden="true"
+              className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1"
+            />
+          </span>
+        </CardContent>
+      </Card>
+    </Link>
   );
-
 }

@@ -1,50 +1,118 @@
+/* Jetons de design EnMoi (Tailwind v4, configuration CSS-first) */
+
 @import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
+/* ───────────────────────────────────────────────────────────────
+   Palette EnMoi
+   Dérivée du turquoise #28939F du livrable imprimé (PMI).
+   Deux turquoises cohabitent volontairement :
+   — teal-500 (#28939F) reste la couleur graphique de la marque,
+     réservée aux filets, jauges et aplats décoratifs ;
+   — teal-700 (#1F7681) porte le texte et les boutons pleins,
+     car le turquoise d'origine ne tient pas le ratio AA en blanc.
+   ─────────────────────────────────────────────────────────────── */
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: #28939f;
-  --hoverForeground: #3aa3b0;
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: #28939f;
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: #f87171;
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: #5bbcc6;
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --enmoi-ink: #12262b;
+  --enmoi-ink-soft: #3d5257;
+  --enmoi-ink-muted: #5a6b6e;
+
+  --enmoi-teal-900: #12565f;
+  --enmoi-teal-800: #1a6772;
+  --enmoi-teal-700: #1f7681;
+  --enmoi-teal-600: #23808c;
+  --enmoi-teal-500: #28939f;
+  --enmoi-teal-300: #8cc4cb;
+  --enmoi-teal-100: #e2eff0;
+  --enmoi-teal-50: #f1f8f8;
+
+  --enmoi-paper: #ffffff;
+  --enmoi-desk: #edf2f2;
+  --enmoi-line: #d5e0e0;
+  --enmoi-line-strong: #b6c8c8;
+
+  /* Unique accent chaud : l'état « à compléter » de la médiathèque. */
+  --enmoi-ochre: #8a6218;
+  --enmoi-ochre-wash: #fbf3e2;
+
+  --enmoi-alert: #b3402f;
+  --enmoi-alert-wash: #fbeeec;
+
+  /* Le seul dégradé de l'interface : le bandeau, repris des pages du PMI. */
+  --enmoi-banner: linear-gradient(
+    168deg,
+    var(--enmoi-teal-700) 0%,
+    var(--enmoi-teal-900) 100%
+  );
+
+  --radius: 0.5rem;
+
+  /* ── Jetons shadcn, câblés sur la palette ── */
+  --background: var(--enmoi-desk);
+  --foreground: var(--enmoi-ink);
+  --hoverForeground: var(--enmoi-teal-800);
+  --card: var(--enmoi-paper);
+  --card-foreground: var(--enmoi-ink);
+  --popover: var(--enmoi-paper);
+  --popover-foreground: var(--enmoi-ink);
+  --primary: var(--enmoi-teal-700);
+  --primary-foreground: #ffffff;
+  --secondary: var(--enmoi-teal-100);
+  --secondary-foreground: var(--enmoi-teal-900);
+  --muted: var(--enmoi-teal-50);
+  --muted-foreground: var(--enmoi-ink-muted);
+  --accent: var(--enmoi-teal-100);
+  --accent-foreground: var(--enmoi-teal-900);
+  --destructive: var(--enmoi-alert);
+  --border: var(--enmoi-line);
+  --input: var(--enmoi-line);
+  --ring: var(--enmoi-teal-600);
+
+  --chart-1: var(--enmoi-teal-700);
+  --chart-2: var(--enmoi-teal-500);
+  --chart-3: var(--enmoi-teal-300);
+  --chart-4: var(--enmoi-ochre);
+  --chart-5: var(--enmoi-ink-muted);
+
+  --sidebar: var(--enmoi-teal-800);
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #ffffff;
+  --sidebar-primary-foreground: var(--enmoi-teal-900);
+  --sidebar-accent: rgba(255, 255, 255, 0.14);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.18);
+  --sidebar-ring: rgba(255, 255, 255, 0.7);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-hoverForeground: var(--hoverForeground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  /* Couleurs de marque exposées comme utilitaires. */
+  --color-ink: var(--enmoi-ink);
+  --color-ink-soft: var(--enmoi-ink-soft);
+  --color-ink-muted: var(--enmoi-ink-muted);
+  --color-brand: var(--enmoi-teal-500);
+  --color-brand-deep: var(--enmoi-teal-900);
+  --color-brand-wash: var(--enmoi-teal-100);
+  --color-brand-veil: var(--enmoi-teal-50);
+  --color-paper: var(--enmoi-paper);
+  --color-desk: var(--enmoi-desk);
+  --color-line: var(--enmoi-line);
+  --color-line-strong: var(--enmoi-line-strong);
+  --color-ochre: var(--enmoi-ochre);
+  --color-ochre-wash: var(--enmoi-ochre-wash);
+  --color-alert: var(--enmoi-alert);
+  --color-alert-wash: var(--enmoi-alert-wash);
+
+  --font-sans: var(--font-sans-enmoi), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display-enmoi), ui-serif, Georgia, serif;
+  --font-script: var(--font-script-enmoi), ui-serif, cursive;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -74,17 +142,92 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* L'élévation passe par le filet, pas par l'ombre : on reste sur du papier. */
+  --shadow-sheet: 0 1px 2px rgba(18, 38, 43, 0.05), 0 1px 1px rgba(18, 38, 43, 0.03);
+  --shadow-raised: 0 8px 24px -12px rgba(18, 38, 43, 0.22);
+  --shadow-banner: 0 0 0 1px rgba(18, 38, 43, 0.04);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem; /* 15px : densité de back-office */
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background-color: var(--enmoi-teal-100);
+    color: var(--enmoi-teal-900);
+  }
+
+  /* Les chiffres s'alignent en colonne dans les listes et les compteurs. */
+  input[type="number"],
+  input[type="date"],
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  /* Capitales sérif espacées : l'intitulé institutionnel des pages du PMI. */
+  .eyebrow {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.6875rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    line-height: 1.2;
+  }
+
+  /* Le logotype enMOI, dessiné dans la police script de la marque. */
+  .wordmark {
+    font-family: var(--font-script);
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0.01em;
+  }
+
+  /* Signature de l'interface : le filet de conduite pointillé de la page B
+     du PMI. Il relie un intitulé à sa valeur et guide l'œil sur les longues
+     listes. */
+  .leader-dots {
+    flex: 1 1 auto;
+    min-width: 1.5rem;
+    align-self: center;
+    border-bottom: 1px dotted var(--enmoi-line-strong);
+  }
+
+  /* Filet vertical turquoise en marge d'un bloc éditorial, repris de la page A. */
+  .editorial-rule {
+    border-left: 2px solid var(--enmoi-teal-500);
+  }
+
+  /* Le bandeau de marque : navigation desktop et barre mobile. */
+  .banner-surface {
+    background-image: var(--enmoi-banner);
+    color: #ffffff;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

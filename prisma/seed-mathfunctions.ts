@@ -1,59 +1,53 @@
-
-// prisma/seed-mathfunctions.ts
-// -------------------------------------------
-// Seed script pour insérer 7 MathFunctions avec valeurs par défaut
-// Utilisation :
-//   Dev :   npx tsx prisma/seed-mathfunctions.ts
-//   Prod :  npx dotenv -e .env.production -- npx tsx prisma/seed-mathfunctions.ts
+// Seed des 7 formules mathématiques
 //
-// Ce script est idempotent : il ne recrée pas les enregistrements existants.
+//   Dev  : npx tsx prisma/seed-mathfunctions.ts
+//   Prod : npx dotenv -e .env.production -- npx tsx prisma/seed-mathfunctions.ts
 //
-// -------------------------------------------
+// Idempotent : ne recrée pas les formules déjà enregistrées.
+//
+// ⚠️ CES FORMULES SONT DES PLACEHOLDERS TECHNIQUES, PAS LES FORMULES MÉTIER.
+//
+// Elles garantissent seulement un résultat entier entre 1 et 100, ce qui permet
+// de faire tourner la chaîne complète (calcul → sélection des visuels → PDF) sans
+// attendre le client. Les forces qu'elles désignent n'ont AUCUNE signification.
+// Un PMI produit avec ces expressions est un document de test : il ne doit jamais
+// être remis à une personne réelle.
+//
+// Les vraies expressions sont à saisir depuis /admin/formules dès que le client
+// les aura fournies.
 
+import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
+import { PLACEHOLDER_EXPRESSIONS } from "./mathFunctionPlaceholders";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("Lancement du seed des fonctions mathématiques...");
+  console.log("Seed des formules mathématiques...");
 
-  // Vérifier si des fonctions existent déjà
   const existingCount = await prisma.mathFunction.count();
   if (existingCount > 0) {
-    console.log(`ℹ️  ${existingCount} fonctions mathématiques déjà présentes — seed ignoré.`);
-    await prisma.$disconnect();
+    console.log(`  ${existingCount} formule(s) déjà présente(s) — seed ignoré.`);
     return;
   }
 
-  // 7 fonctions mathématiques par défaut
-  const expressions = [
-    "(a1 + a2 + a3 + a4) / 4", // Moyenne des composantes annuelles
-    "(m1 * 30 + j1) - (m2 * 28 + j2)", // Différence jours/mois
-    "(a1 + m1 + j1) % 9", // Numérologie simple
-    "a1 * m2 - a4 * j1", // Pondération croisée
-    "((a1 + a4) / 2) + (m1 - j2)", // Moyenne pondérée années/mois/jour
-    "(a2 * j1 + a3 * m2) / 2", // Influence combinée
-    "abs((a1 + m1 + j1) - (a4 + m2 + j2))", // Écart énergétique global
-  ];
-
-  const mathFunctionsData = expressions.map((expr, i) => ({
-    number: i + 1,
-    expression: expr,
-  }));
-
   await prisma.mathFunction.createMany({
-    data: mathFunctionsData,
+    data: PLACEHOLDER_EXPRESSIONS.map((expression, index) => ({
+      number: index + 1,
+      expression,
+    })),
   });
 
-  console.log(`✅ ${mathFunctionsData.length} fonctions mathématiques créées avec succès.`);
+  console.log(`  ${PLACEHOLDER_EXPRESSIONS.length} formules créées.`);
+  console.log("  ⚠️ Ce sont des placeholders : les forces désignées n'ont aucun sens métier.");
+  console.log("  Saisissez les vraies expressions depuis /admin/formules.");
 }
 
 main()
-  .catch((e) => {
-    console.error("❌ Erreur lors du seed des fonctions mathématiques :", e);
+  .catch((err) => {
+    console.error("Échec du seed des formules :", err);
     process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();
   });
-

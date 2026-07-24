@@ -1,0 +1,506 @@
+"use client";
+
+// Médiathèque des forces — dépôt et remplacement des 2 visuels de chaque force
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import toast from "react-hot-toast";
+import { Check, ImageOff, Loader2, Search, Trash2, Upload } from "lucide-react";
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
+import { Progress } from "../ui/progress";
+import { Skeleton } from "../ui/skeleton";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
+import type { ForceType } from "@/types/modelPrisma";
+import { isForceComplete } from "@/types/modelPrisma";
+
+type ForcePage = "a" | "b";
+type Filter = "toutes" | "completes" | "incompletes";
+
+type Summary = { total: number; complete: number; incomplete: number };
+
+/// Identifie l'opération en cours pour n'afficher le spinner que sur la bonne case.
+type PendingKey = `${number}-${ForcePage}`;
+
+/// Ne retient que les PNG d'un dépôt, triés par nom pour un ordre prévisible.
+function pngFilesFrom(list: FileList | null): File[] {
+  if (!list) return [];
+  return Array.from(list)
+    .filter((file) => file.type === "image/png")
+    .sort((a, b) => a.name.localeCompare(b.name, "fr"));
+}
+
+export default function DataManipulationForces() {
+  const [forces, setForces] = useState<ForceType[]>([]);
+  const [summary, setSummary] = useState<Summary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [pending, setPending] = useState<Set<PendingKey>>(new Set());
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<Filter>("toutes");
+  /// Numéro de la force actuellement survolée par un glisser-déposer.
+  const [dropTarget, setDropTarget] = useState<number | null>(null);
+
+  const loadForces = useCallback(async () => {
+    try {
+      const res = await fetch("/api/forces");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Chargement impossible.");
+      setForces(data.forces);
+      setSummary(data.summary);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Chargement impossible.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadForces();
+  }, [loadForces]);
+
+  const setPendingFor = (key: PendingKey, active: boolean) => {
+    setPending((current) => {
+      const next = new Set(current);
+      if (active) next.add(key);
+      else next.delete(key);
+      return next;
+    });
+  };
+
+  /// Remplace une force dans la liste et recalcule le compteur de complétude.
+  const applyUpdatedForce = (updated: ForceType) => {
+    setForces((current) => {
+      const next = current.map((f) => (f.number === updated.number ? updated : f));
+      const complete = next.filter(isForceComplete).length;
+      setSummary({ total: next.length, complete, incomplete: next.length - complete });
+      return next;
+    });
+  };
+
+  const handleUpload = async (forceNumber: number, page: ForcePage, file: File) => {
+    const key: PendingKey = `${forceNumber}-${page}`;
+    setPendingFor(key, true);
+
+    try {
+      const body = new FormData();
+      body.append("file", file);
+
+      const res = await fetch(`/api/forces/${forceNumber}/${page}`, {
+        method: "POST",
+        body,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Dépôt impossible.");
+
+      applyUpdatedForce(data.force);
+      toast.success(`Page ${page.toUpperCase()} de la force ${forceNumber} déposée.`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Dépôt impossible.");
+    } finally {
+      setPendingFor(key, false);
+    }
+  };
+
+  const handleDelete = async (forceNumber: number, page: ForcePage) => {
+    const key: PendingKey = `${forceNumber}-${page}`;
+    setPendingFor(key, true);
+
+    try {
+      const res = await fetch(`/api/forces/${forceNumber}/${page}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Suppression impossible.");
+
+      applyUpdatedForce(data.force);
+      toast.success(`Page ${page.toUpperCase()} de la force ${forceNumber} retirée.`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Suppression impossible.");
+    } finally {
+      setPendingFor(key, false);
+    }
+  };
+
+  /// Répartit un lot déposé sur une ligne : un fichier va dans la première case
+  /// libre, deux fichiers remplissent A puis B dans l'ordre alphabétique.
+  const handleRowFiles = (force: ForceType, files: File[]) => {
+    if (files.length === 0) {
+      toast.error("Seuls les fichiers PNG sont acceptés.");
+      return;
+    }
+
+    if (files.length === 1) {
+      const target: ForcePage = !force.pageAKey ? "a" : !force.pageBKey ? "b" : "a";
+      handleUpload(force.number, target, files[0]);
+      return;
+    }
+
+    handleUpload(force.number, "a", files[0]);
+    handleUpload(force.number, "b", files[1]);
+
+    if (files.length > 2) {
+      toast(`Force ${force.number} : seuls les 2 premiers fichiers ont été retenus.`);
+    }
+  };
+
+  const visibleForces = useMemo(() => {
+    const needle = search.trim().toLowerCase();
+    return forces.filter((force) => {
+      const complete = isForceComplete(force);
+      if (filter === "completes" && !complete) return false;
+      if (filter === "incompletes" && complete) return false;
+      if (!needle) return true;
+      return (
+        force.title.toLowerCase().includes(needle) ||
+        String(force.number) === needle
+      );
+    });
+  }, [forces, search, filter]);
+
+  if (loading) {
+    return (
+      <div className="space-y-4" aria-busy="true" aria-live="polite">
+        <span className="sr-only">Chargement des forces…</span>
+        <Skeleton className="h-28 w-full rounded-xl" />
+        {Array.from({ length: 6 }).map((_, index) => (
+          <Skeleton key={index} className="h-16 w-full rounded-lg" />
+        ))}
+      </div>
+    );
+  }
+
+  const percent = summary && summary.total > 0
+    ? Math.round((summary.complete / summary.total) * 100)
+    : 0;
+
+  const filterOptions: { value: Filter; label: string; count?: number }[] = [
+    { value: "toutes", label: "Toutes", count: summary?.total },
+    { value: "incompletes", label: "À compléter", count: summary?.incomplete },
+    { value: "completes", label: "Complètes", count: summary?.complete },
+  ];
+
+  return (
+    <div className="space-y-5">
+      {summary && (
+        <section
+          aria-label="Avancement du dépôt"
+          className="border-line bg-paper shadow-sheet rounded-xl border p-5 md:p-6"
+        >
+          <div className="flex flex-wrap items-end justify-between gap-6">
+            <div className="editorial-rule pl-4">
+              <p className="eyebrow text-brand-deep">Avancement</p>
+              <p className="mt-2 flex items-baseline gap-2">
+                <span className="font-display text-ink text-[2.75rem] leading-none">
+                  {summary.complete}
+                </span>
+                <span className="text-ink-muted text-lg">/ {summary.total}</span>
+                <span className="text-ink-muted text-[0.9375rem]">
+                  forces complètes
+                </span>
+              </p>
+            </div>
+
+            {summary.incomplete > 0 ? (
+              <button
+                type="button"
+                onClick={() => setFilter("incompletes")}
+                className="bg-ochre-wash text-ochre hover:border-ochre cursor-pointer rounded-lg border border-transparent px-4 py-2.5 text-left text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+              >
+                <span className="font-semibold">{summary.incomplete}</span> force
+                {summary.incomplete > 1 ? "s" : ""} à compléter
+                <span className="block text-[0.8125rem] opacity-80">
+                  Afficher uniquement celles-ci
+                </span>
+              </button>
+            ) : (
+              <p className="text-primary bg-brand-wash rounded-lg px-4 py-2.5 text-sm font-semibold">
+                Les 100 forces sont complètes.
+              </p>
+            )}
+          </div>
+
+          <Progress
+            value={percent}
+            aria-label={`${summary.complete} forces complètes sur ${summary.total}`}
+            className="mt-5 h-1.5"
+          />
+        </section>
+      )}
+
+      <section
+        aria-label="Filtres"
+        className="flex flex-col gap-3 lg:flex-row lg:items-center"
+      >
+        <div className="relative flex-1">
+          <Search
+            aria-hidden="true"
+            className="text-ink-muted pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2"
+          />
+          <Input
+            type="search"
+            className="bg-paper h-11 pl-9"
+            placeholder="Rechercher une force par titre ou par numéro…"
+            aria-label="Rechercher une force"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
+        <div
+          role="group"
+          aria-label="Filtrer les forces"
+          className="border-line bg-paper flex gap-1 rounded-lg border p-1"
+        >
+          {filterOptions.map(({ value, label, count }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setFilter(value)}
+              aria-pressed={filter === value}
+              className={`flex-1 cursor-pointer rounded-md px-3 py-2 text-sm whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] ${
+                filter === value
+                  ? "bg-primary font-semibold text-white"
+                  : "text-ink-muted hover:bg-brand-veil"
+              }`}
+            >
+              {label}
+              {typeof count === "number" && (
+                <span className={filter === value ? "opacity-80" : "opacity-70"}>
+                  {" "}
+                  ({count})
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <p className="text-ink-muted text-[0.8125rem]">
+        Glissez un PNG sur une ligne pour remplir sa première case libre, ou deux PNG
+        pour déposer les pages A et B d&apos;un coup.
+      </p>
+
+      {visibleForces.length === 0 ? (
+        <p className="border-line text-ink-muted rounded-xl border border-dashed py-16 text-center">
+          Aucune force ne correspond à cette recherche.
+        </p>
+      ) : (
+        <ul className="space-y-2">
+          {visibleForces.map((force) => {
+            const complete = isForceComplete(force);
+            const isDropTarget = dropTarget === force.number;
+
+            return (
+              <li
+                key={force.id}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDropTarget(force.number);
+                }}
+                onDragLeave={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+                    setDropTarget(null);
+                  }
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDropTarget(null);
+                  handleRowFiles(force, pngFilesFrom(e.dataTransfer.files));
+                }}
+                className={`bg-paper shadow-sheet flex flex-col gap-4 rounded-lg border p-3 transition-colors sm:flex-row sm:items-center sm:gap-5 sm:p-4 ${
+                  isDropTarget
+                    ? "border-brand bg-brand-veil border-dashed"
+                    : "border-line"
+                }`}
+              >
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  {/* La pastille porte l'état de la ligne : turquoise si les deux
+                      pages sont là, ocre s'il en manque une. */}
+                  <span
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
+                      complete
+                        ? "bg-brand-wash text-brand-deep"
+                        : "bg-ochre-wash text-ochre"
+                    }`}
+                  >
+                    {force.number}
+                  </span>
+
+                  <span className="text-ink truncate font-medium">{force.title}</span>
+
+                  <span aria-hidden="true" className="leader-dots hidden sm:block" />
+                </div>
+
+                <div className="flex shrink-0 flex-wrap gap-2">
+                  {(["a", "b"] as const).map((page) => (
+                    <PageSlot
+                      key={page}
+                      force={force}
+                      page={page}
+                      busy={pending.has(`${force.number}-${page}`)}
+                      onUpload={(file) => handleUpload(force.number, page, file)}
+                      onDelete={() => handleDelete(force.number, page)}
+                    />
+                  ))}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+type PageSlotProps = {
+  force: ForceType;
+  page: ForcePage;
+  busy: boolean;
+  onUpload: (file: File) => void;
+  onDelete: () => void;
+};
+
+/// Une case de dépôt, pour la page A ou B d'une force.
+function PageSlot({ force, page, busy, onUpload, onDelete }: PageSlotProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [showPreview, setShowPreview] = useState(false);
+
+  const storedKey = page === "a" ? force.pageAKey : force.pageBKey;
+  const filename = page === "a" ? force.pageAFilename : force.pageBFilename;
+  const label = `Page ${page.toUpperCase()}`;
+  const context = `${label} de la force ${force.number}, ${force.title}`;
+
+  return (
+    <div className="flex items-center gap-1">
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/png"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) onUpload(file);
+          // Réinitialise pour permettre de redéposer le même fichier.
+          e.target.value = "";
+        }}
+      />
+
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => (storedKey ? setShowPreview(true) : inputRef.current?.click())}
+        aria-label={
+          storedKey ? `Voir le visuel — ${context}` : `Déposer le visuel — ${context}`
+        }
+        title={filename ?? `${label} — aucun visuel déposé`}
+        className={`flex min-w-[7.5rem] cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] disabled:cursor-wait disabled:opacity-50 ${
+          storedKey
+            ? "border-brand/40 bg-brand-veil text-primary hover:bg-brand-wash"
+            : "border-line-strong text-ink-muted hover:border-brand hover:bg-brand-veil border-dashed"
+        }`}
+      >
+        {busy ? (
+          <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+        ) : storedKey ? (
+          <Check aria-hidden="true" className="h-4 w-4" />
+        ) : (
+          <ImageOff aria-hidden="true" className="h-4 w-4" />
+        )}
+        <span className="font-medium">{label}</span>
+        <span className="text-[0.75rem] opacity-70">
+          {storedKey ? "déposée" : "manquante"}
+        </span>
+      </button>
+
+      {storedKey && (
+        <>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            disabled={busy}
+            aria-label={`Remplacer le visuel — ${context}`}
+            title={`Remplacer la page ${page.toUpperCase()}`}
+            onClick={() => inputRef.current?.click()}
+          >
+            <Upload aria-hidden="true" className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            disabled={busy}
+            aria-label={`Retirer le visuel — ${context}`}
+            title={`Retirer la page ${page.toUpperCase()}`}
+            onClick={onDelete}
+            className="hover:bg-alert-wash text-destructive hover:text-destructive"
+          >
+            <Trash2 aria-hidden="true" className="h-4 w-4" />
+          </Button>
+        </>
+      )}
+
+      {storedKey && (
+        <PreviewDialog
+          open={showPreview}
+          onOpenChange={setShowPreview}
+          forceNumber={force.number}
+          forceTitle={force.title}
+          page={page}
+        />
+      )}
+    </div>
+  );
+}
+
+type PreviewDialogProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  forceNumber: number;
+  forceTitle: string;
+  page: ForcePage;
+};
+
+/// Affiche le visuel en grand. L'image est servie par une route protégée : le
+/// bucket est privé, il n'y a pas d'URL publique.
+function PreviewDialog({
+  open,
+  onOpenChange,
+  forceNumber,
+  forceTitle,
+  page,
+}: PreviewDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        showCloseButton={false}
+        className="bg-paper max-w-[min(48rem,calc(100%-2rem))] gap-4"
+      >
+        <DialogHeader>
+          <p className="eyebrow text-brand-deep">Page {page.toUpperCase()}</p>
+          <DialogTitle className="font-display text-ink text-xl">
+            {forceNumber}. {forceTitle}
+          </DialogTitle>
+        </DialogHeader>
+
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={`/api/forces/${forceNumber}/${page}/preview`}
+          alt={`${forceTitle}, page ${page.toUpperCase()}`}
+          className="border-line max-h-[65vh] w-full rounded border bg-white object-contain"
+        />
+
+        <DialogClose asChild>
+          <Button type="button" variant="outline" className="self-end">
+            Fermer
+          </Button>
+        </DialogClose>
+      </DialogContent>
+    </Dialog>
+  );
+}

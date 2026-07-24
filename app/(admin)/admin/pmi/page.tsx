@@ -1,25 +1,23 @@
-"use client"
+// Génération du document PMI d'une personne
 
 import DataManipulationPMI from "@/components/dataManipulation/DataManipulationPMI";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+
+export const metadata = {
+  title: "Générer un PMI",
+};
 
 export default function AdminPMIPage() {
-  const router = useRouter();
-
   return (
-    <main className="flex flex-col">
+    <>
+      <AdminPageHeader
+        eyebrow="Livrable"
+        title="Générer un PMI"
+        backHref="/admin"
+        description="Le Potentiel Mental Inné d'une personne : pages d'introduction personnalisées, puis deux pages pour chacune de ses 7 forces."
+      />
 
-      <div className="flex items-center gap-4 mb-6">
-        <Button type="button" variant="outline" onClick={() => router.push("/admin")}>
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <h1 className="text-3xl font-medium tracking-wide">Générer des PMI</h1>
-      </div>
-
-      <DataManipulationPMI/>
-
-    </main>
+      <DataManipulationPMI />
+    </>
   );
 }

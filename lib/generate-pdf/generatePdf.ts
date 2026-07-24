@@ -1,74 +1,40 @@
+// Assemblage du PMI : pages d'introduction puis 2 pages par force
+
 import PDFDocument from "pdfkit";
-import path from "path";
-import { renderAptitudeCard } from "./renderAptitudeCard";
 import { PdfData } from "@/types/pdf";
+import { DEFAULT_FONT_PATH, registerFonts } from "./fonts";
+import { renderForcePages } from "./renderForcePages";
 import { renderPage5 } from "./page5";
 import { renderPage6 } from "./page6";
 
 export async function generatePdf(data: PdfData): Promise<Buffer> {
+  const doc = new PDFDocument({ size: "A4", font: DEFAULT_FONT_PATH, margin: 0 });
+  registerFonts(doc);
 
-  return new Promise<Buffer>(async (resolve, reject) => {
-
-    try{
-
-      const defaultFont = path.join(process.cwd(), "public", "fonts", "AktivGrotesk-Regular.ttf");
-
-      const doc = new PDFDocument({ size: "A4", font: defaultFont });
-
-      const fontRegularAktiv = path.join(process.cwd(), "public", "fonts", "AktivGrotesk-Regular.ttf");
-      const fontBoldAktiv = path.join(process.cwd(), "public", "fonts", "AktivGrotesk-XBold.ttf");
-      const fontBoldItalicAktiv = path.join(process.cwd(), "public", "fonts", "AktivGrotesk-XBoldItalic.ttf");
-      const fontMediumAktiv = path.join(process.cwd(), "public", "fonts", "AktivGrotesk-Medium.ttf");
-      const fontMediumItalicAktiv = path.join(process.cwd(), "public", "fonts", "AktivGrotesk-MediumItalic.ttf");
-      const fontBoldPhilosopher = path.join(process.cwd(), "public", "fonts", "Philosopher-Bold.ttf");
-      const fontSemiBoldAktiv = path.join(process.cwd(), "public", "fonts", "AktivGrotesk-SemiBold.ttf");
-      const fontItalicAktiv = path.join(process.cwd(), "public", "fonts", "AktivGrotesk-Italic.ttf");
-      const fontRosaliaRegular = path.join(process.cwd(), "public", "fonts", "Rosalia.otf");
-
-      doc.registerFont("regularAktiv", fontRegularAktiv);
-      doc.registerFont("boldAktiv", fontBoldAktiv);
-      doc.registerFont("boldItalicAktiv", fontBoldItalicAktiv);
-      doc.registerFont("mediumAktiv", fontMediumAktiv);
-      doc.registerFont("mediumItalicAktiv", fontMediumItalicAktiv);
-      doc.registerFont("boldPhilosopher", fontBoldPhilosopher);
-      doc.registerFont("semiboldAktiv", fontSemiBoldAktiv);
-      doc.registerFont("italicAktiv", fontItalicAktiv);
-      doc.registerFont("rosaliaRegular", fontRosaliaRegular);
-
-      const buffers: Buffer[] = [];
-      doc.on("data", buffers.push.bind(buffers));
-      doc.on("end", () => resolve(Buffer.concat(buffers)));
-      doc.on("error", reject);
-
-      const aptitudesTitles = data.aptitudes.map(a => a.title);
-
-      // === page 5 ===
-      await renderPage5(doc, data.firstName, data.lastName, data.birthDate, data.birthPlace);
-
-      // === page 6 ===
-      doc.addPage();
-      await renderPage6(doc, data.firstName, data.lastName, aptitudesTitles);
-
-      // === Fiches des aptitudes ===
-      doc.addPage();
-
-      for (let i = 0; i < data.aptitudes.length; i++) {
-
-        const aptitude = data.aptitudes[i];
-        
-        await renderAptitudeCard(doc, aptitude);
-
-        if (i < data.aptitudes.length - 1) {
-          doc.addPage();
-        }
-
-      }
-
-      doc.end();
-
-    }
-    catch(err){
-      reject(err)
-    }
+  const chunks: Buffer[] = [];
+  const finished = new Promise<Buffer>((resolve, reject) => {
+    doc.on("data", (chunk: Buffer) => chunks.push(chunk));
+    doc.on("end", () => resolve(Buffer.concat(chunks)));
+    doc.on("error", reject);
   });
+
+  // --- Pages d'introduction ---
+  await renderPage5(doc, data.firstName, data.lastName, data.birthDate, data.birthPlace);
+
+  doc.addPage();
+  await renderPage6(
+    doc,
+    data.firstName,
+    data.lastName,
+    data.forces.map((force) => force.title)
+  );
+
+  // --- 2 pages par force ---
+  for (const force of data.forces) {
+    doc.addPage();
+    renderForcePages(doc, force, data.firstName);
+  }
+
+  doc.end();
+  return finished;
 }

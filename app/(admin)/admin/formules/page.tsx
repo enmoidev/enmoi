@@ -1,26 +1,23 @@
-"use client"
+// Édition des 7 formules mathématiques
 
 import DataManipulationFunctions from "@/components/dataManipulation/DataManipulationFunctions";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+
+export const metadata = {
+  title: "Formules",
+};
 
 export default function AdminFormulesPage() {
-  const router = useRouter();
-
   return (
-    
-    <main className="flex flex-col">
+    <>
+      <AdminPageHeader
+        eyebrow="Calcul des forces"
+        title="Formules"
+        backHref="/admin"
+        description="Les 7 expressions qui transforment une date de naissance en 7 numéros de forces. Une modification s'applique à tous les PMI générés ensuite."
+      />
 
-      <div className="flex items-center gap-4 mb-6">
-        <Button type="button" variant="outline" onClick={() => router.push("/admin")}>
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <h1 className="text-3xl font-medium tracking-wide">Gestion des formules</h1>
-      </div>
-
-      <DataManipulationFunctions/>
-
-    </main>
+      <DataManipulationFunctions />
+    </>
   );
 }

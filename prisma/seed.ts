@@ -1,108 +1,102 @@
-// seed to create sadmin users in the database
+// Seed du ou des comptes administrateurs
+//
+//   Dev  : npx tsx prisma/seed.ts
+//   Prod : npx dotenv -e .env.production -- npx tsx prisma/seed.ts
+//
+// Ce script utilise l'API serveur de better-auth (auth.api.signUpEmail) et non le
+// client HTTP : il fonctionne sans serveur Next démarré. Le chargement explicite
+// de dotenv en tête de fichier est nécessaire, les modules importés lisant
+// process.env dès leur évaluation.
 
-// seed dev --> npx tsx prisma/seed.ts
-// seed prod --> npx dotenv -e .env.production -- npx tsx prisma/seed.ts
+import "dotenv/config";
 
-import { signUp } from "../lib/auth-client";
 import { PrismaClient, Role } from "@prisma/client";
+import { auth } from "../lib/auth";
 
 const prisma = new PrismaClient();
 
+/// Découpe une variable d'environnement multi-valeurs ("a,b" -> ["a", "b"]).
+function splitEnv(value: string): string[] {
+  return value.split(",").map((entry) => entry.trim());
+}
+
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    console.error(`${name} n'est pas défini dans le fichier d'environnement.`);
+    process.exit(1);
+  }
+  return value;
+}
+
 async function main() {
-  
-  const adminEmailsEnv = process.env.EMAIL_ADMIN;
-  const firstNameEnv = process.env.FIRSTNAME_ADMIN;
-  const lastNameEnv = process.env.LASTNAME_ADMIN;
-  const passwordEnv = process.env.PASSWORD_ADMIN;
-  const roleEnv = process.env.ROLE_ADMIN;
+  const emails = splitEnv(requireEnv("EMAIL_ADMIN"));
+  const firstNames = splitEnv(requireEnv("FIRSTNAME_ADMIN"));
+  const lastNames = splitEnv(requireEnv("LASTNAME_ADMIN"));
+  const passwords = splitEnv(requireEnv("PASSWORD_ADMIN"));
+  const roles = splitEnv(requireEnv("ROLE_ADMIN"));
 
-  if (!adminEmailsEnv) {
-    console.error("EMAIL_ADMIN is not defined in .env");
+  const counts = [firstNames, lastNames, passwords, roles].map((list) => list.length);
+  if (counts.some((count) => count !== emails.length)) {
+    console.error(
+      `Incohérence de configuration : ${emails.length} email(s) mais ` +
+        `${counts.join("/")} valeurs pour prénom/nom/mot de passe/rôle.`
+    );
     process.exit(1);
   }
 
-  if (!passwordEnv) {
-    console.error("PASSWORD_ADMIN is not defined in .env");
-    process.exit(1);
-  }
+  for (let i = 0; i < emails.length; i++) {
+    const email = emails[i];
+    const name = `${firstNames[i]} ${lastNames[i]}`;
 
-  if (!lastNameEnv) {
-    console.error("LASTNAME_ADMIN is not defined in .env");
-    process.exit(1);
-  }
-
-  if (!firstNameEnv) {
-    console.error("FIRSTNAME_ADMIN is not defined in .env");
-    process.exit(1);
-  }
-
-  if (!roleEnv) {
-    console.error("ROLE_ADMIN is not defined in .env");
-    process.exit(1);
-  }
-
-  const adminEmails = adminEmailsEnv.split(",").map((e) => e.trim());
-  const firstName = firstNameEnv.split(",").map((e) => e.trim());
-  const lastName = lastNameEnv.split(",").map((e) => e.trim());
-  const password = passwordEnv.split(",").map((e) => e.trim());
-  const role = roleEnv.split(",").map((e) => e.trim());
-
-  for (let i = 0; i < adminEmails.length; i++) {
-    
-    // verify if the user already exists
-    const existing = await prisma.user.findUnique({ where: { email:adminEmails[i] } });
+    const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
-      console.log(`Admin already exists: ${adminEmails[i]}`);
+      console.log(`  Déjà présent, ignoré : ${email}`);
       continue;
     }
 
-    console.log(adminEmails[i])
-    console.log(password[i])
-    console.log(firstName[i])
-    console.log(lastName[i])
+    // Ne jamais journaliser le mot de passe : PASSWORD_ADMIN est un secret réel.
+    console.log(`  Création de ${email} (${name})...`);
 
-    const { error } = await signUp.email({email:adminEmails[i],password:password[i], name: `${firstName[i]} ${lastName[i]}`,
-      fetchOptions: {
-        onError: () => {
-          console.log(`Error to signup admin user with betterAuth: ${adminEmails[i]}`);
-        },
-        onSuccess: async () => {
-          console.log(`Sucess to signup admin user with betterAuth: ${adminEmails[i]}`);
-        },
-      },
+    const role = Role[roles[i] as keyof typeof Role];
+    if (!role) {
+      console.error(`  Rôle inconnu pour ${email} : « ${roles[i] } ». Attendu ADMIN ou CUSTOMER.`);
+      continue;
+    }
 
-		});
+    try {
+      // `role` fait partie des additionalFields de better-auth : il est attendu
+      // dès la création, les autres champs métier sont complétés juste après.
+      await auth.api.signUpEmail({
+        body: { email, password: passwords[i], name, role },
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`  Échec de la création de ${email} : ${message}`);
+      continue;
+    }
 
-    if (error) {
-      console.log(`Failed to create admin ${adminEmails[i]}:`, error);
-    } 
-    
-    else {
-
-    const name = firstName[i] + " " + lastName[i]
-      
-    // affect the role and other properties to the user
+    // better-auth ne connaît pas nos champs métier : on les complète ensuite.
     await prisma.user.update({
-      where: { email:adminEmails[i] },
+      where: { email },
       data: {
-        role: Role[role[i] as keyof typeof Role],
-        firstName: firstName[i],
-        lastName: lastName[i],
-        name: name,
+        role,
+        firstName: firstNames[i],
+        lastName: lastNames[i],
+        name,
         emailVerified: true,
       },
     });
 
-    console.log(`Admin created: ${adminEmails[i]}`);
-    
-    }
+    console.log(`  Administrateur créé : ${email}`);
   }
 }
 
 main()
-
-  .catch((e) => {
-    console.error("Error:", e);
+  .catch((err) => {
+    console.error("Échec du seed des administrateurs :", err);
     process.exit(1);
   })
-  .finally(() => prisma.$disconnect());
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

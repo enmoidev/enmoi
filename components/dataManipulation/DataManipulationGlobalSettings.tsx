@@ -1,11 +1,13 @@
 "use client";
 
+// Paramètres globaux — réglages qui s'appliquent à toute l'application
+
 import { useEffect, useState } from "react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
+import { Skeleton } from "../ui/skeleton";
 import { toast } from "react-hot-toast";
-import { Loader2, Save} from "lucide-react";
+import { Loader2, Save } from "lucide-react";
 import { Label } from "../ui/label";
 
 export default function DataManipulationGlobalSettings() {
@@ -15,7 +17,7 @@ export default function DataManipulationGlobalSettings() {
   const [ambassadorAccounts, setAmbassadorAccounts] = useState<number | null>(null);
 
   useEffect(() => {
-    
+
     const fetchSettings = async () => {
 
       setLoading(true);
@@ -25,12 +27,12 @@ export default function DataManipulationGlobalSettings() {
         if (!res.ok) throw new Error("Erreur lors du chargement des settings");
         const data = await res.json();
         setAmbassadorAccounts(data.ambassadorAccounts);
-      } 
-      
+      }
+
       catch (err) {
         toast.error("Impossible de récupérer les settings");
-      } 
-      
+      }
+
       finally {
         setLoading(false);
       }
@@ -60,50 +62,54 @@ export default function DataManipulationGlobalSettings() {
   };
 
   return (
+    <section
+      aria-labelledby="settings-title"
+      className="border-line bg-paper shadow-sheet max-w-2xl rounded-xl border p-5 md:p-6"
+    >
+      <h2 id="settings-title" className="eyebrow text-brand-deep">
+        Comptes ambassadeur
+      </h2>
+      <p className="text-ink-muted mt-2 text-sm">
+        Nombre de comptes ambassadeur ouverts sur l&apos;application. Le réglage
+        s&apos;applique immédiatement à toute la plateforme.
+      </p>
 
-    <Card className="w-full space-y-6">
+      {loading ? (
+        <div className="mt-5 space-y-3" aria-busy="true">
+          <span className="sr-only">Chargement des paramètres…</span>
+          <Skeleton className="h-5 w-48 rounded" />
+          <Skeleton className="h-9 w-full max-w-xs rounded-md" />
+        </div>
+      ) : (
+        <div className="mt-5">
+          <Label htmlFor="ambassador-accounts" className="pb-2">
+            Nombre de comptes ambassadeur
+          </Label>
+          <Input
+            id="ambassador-accounts"
+            className="bg-paper w-full max-w-xs"
+            type="number"
+            aria-describedby="ambassador-accounts-hint"
+            value={ambassadorAccounts ?? ""}
+            onChange={(e) => setAmbassadorAccounts(Number(e.target.value))}
+            placeholder="0"
+          />
+          <p id="ambassador-accounts-hint" className="text-ink-muted mt-1.5 text-[0.8125rem]">
+            Laissez à 0 pour fermer les inscriptions ambassadeur.
+          </p>
 
-      <CardHeader>
-        <CardTitle className="text-2xl text-neutral-700">Paramètres globaux</CardTitle>
-        <p className="text-neutral-700">Modifier les paramètres généraux de l&apos;application et le mot de passe administrateur</p>
-      </CardHeader>
-
-      <CardContent className="space-y-6">
-
-        {loading ? (
-          <Loader2 className="animate-spin mx-auto w-6 h-6 text-primary" />
-        ) : (
-          <>
-            {/* --- Global Settings --- */}
-            <div className="flex flex-col gap-2 justify-center">
-              <Label className="pb-2">Nombre d&apos;ambassadeurs</Label>
-              <Input
-                className="md:w-1/3 w-full"
-                type="number"
-                value={ambassadorAccounts ?? ""}
-                onChange={(e) => setAmbassadorAccounts(Number(e.target.value))}
-                placeholder="définir le nombre de compte ambassadeur disponible ici"
-              />
-              <Button
-              size={"lg"}
-                onClick={handleSaveSettings}
-                disabled={savingSettings}
-                className="mt-2 flex items-center gap-2 w-auto self-center"
-              >
-                {savingSettings ? (
-                  <>
-                    <Loader2 className="animate-spin w-4 h-4" /> <span className="pb-1">Enregistrer les modifications</span>
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4" /> <span className="pb-1">Enregistrer les modifications</span>
-                  </>
-                )}
-              </Button>
-            </div>
-          </>
-        )}
-      </CardContent>
-    </Card>
+          <div className="border-line mt-6 border-t pt-5">
+            <Button onClick={handleSaveSettings} disabled={savingSettings}>
+              {savingSettings ? (
+                <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save aria-hidden="true" className="h-4 w-4" />
+              )}
+              Enregistrer
+            </Button>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }

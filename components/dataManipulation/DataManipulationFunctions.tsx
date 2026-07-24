@@ -1,16 +1,28 @@
 "use client";
 
+// Gestion des 7 formules — édition d'une expression et banc d'essai sur une date
+
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Skeleton } from "../ui/skeleton";
 import { toast } from "react-hot-toast";
-import { Calculator, Loader2, Save } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { evaluateFormula } from "@/lib/computeFunctions/computeFunctions";
+import { Calculator, ChevronDown, Loader2, Save, TriangleAlert } from "lucide-react";
+import { buildBirthVariables, evaluateFormula } from "@/lib/computeFunctions/computeFunctions";
 import { Label } from "../ui/label";
 import { MathFunctionType } from "@/types/modelPrisma";
+import { roleForPosition } from "@/components/admin/forceRoles";
+
+/// Variables utilisables dans une expression, telles que substituées côté serveur.
+const availableVariables: { name: string; meaning: string }[] = [
+  { name: "j3", meaning: "jour complet" },
+  { name: "m3", meaning: "mois complet" },
+  { name: "a5", meaning: "année complète" },
+  { name: "j1 j2", meaning: "chiffres du jour" },
+  { name: "m1 m2", meaning: "chiffres du mois" },
+  { name: "a1 … a4", meaning: "chiffres de l'année" },
+];
 
 export default function DataManipulationFunctions() {
 
@@ -19,7 +31,9 @@ export default function DataManipulationFunctions() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [birthDate, setBirthDate] = useState<Date | null>(null);
-  const [generatedNumbers, setGeneratedNumbers] = useState<{ title: number; result: number | null }[]>([]);
+  const [generatedNumbers, setGeneratedNumbers] = useState<
+    { title: number; result: number | null; error?: string }[]
+  >([]);
 
   useEffect(() => {
 
@@ -35,12 +49,12 @@ export default function DataManipulationFunctions() {
         const data = await res.json();
 
         setFunctions(data);
-      } 
-      
+      }
+
       catch (error) {
         toast.error("Impossible de charger les formules");
-      } 
-      
+      }
+
       finally {
         setLoading(false);
       }
@@ -69,12 +83,12 @@ export default function DataManipulationFunctions() {
 
       toast.success("Formule mise à jour !");
 
-    } 
-    
+    }
+
     catch {
       toast.error("Erreur lors de l'enregistrement");
-    } 
-    
+    }
+
     finally {
       setSaving(false);
     }
@@ -85,153 +99,279 @@ export default function DataManipulationFunctions() {
     if (!birthDate){
       toast.error("Veuillez sélectionner une date de naissance");
       return;
-    } 
+    }
 
-    const day = birthDate.getDate();
-    const month = birthDate.getMonth() + 1;
-    const year = birthDate.getFullYear();
+    const variables = buildBirthVariables(birthDate);
 
-    const yearDigits = year.toString().padStart(4, "0").split("").map(Number);
-    const dayDigits = day.toString().padStart(2, "0").split("").map(Number);
-    const monthDigits = month.toString().padStart(2, "0").split("").map(Number);
-
-    const results = functions.map((f) => ({
-      title: f.number,
-      result: evaluateFormula(
-        f.expression,
-        day,
-        month,
-        year,
-        yearDigits[0],
-        yearDigits[1],
-        yearDigits[2],
-        yearDigits[3],
-        dayDigits[0],
-        dayDigits[1],
-        monthDigits[0],
-        monthDigits[1]
-      ),
-    }));
+    // Chaque formule est évaluée indépendamment : une expression fautive affiche
+    // son message d'erreur sans empêcher le calcul des six autres.
+    const results = functions.map((f) => {
+      try {
+        return { title: f.number, result: evaluateFormula(f.expression, variables) };
+      } catch (err) {
+        return {
+          title: f.number,
+          result: null,
+          error: err instanceof Error ? err.message : "Formule invalide.",
+        };
+      }
+    });
 
     setGeneratedNumbers(results);
   };
 
+  // Dernier diagnostic connu par position : c'est ce qui rend une expression
+  // fautive visible directement dans la liste.
+  const errorsByNumber = new Map(
+    generatedNumbers.filter((n) => n.error).map((n) => [n.title, n.error as string])
+  );
+
   return (
-    
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="text-2xl text-neutral-700">Gestion des formules mathématiques</CardTitle>
-        <p className="text-neutral-700">sélectionner une formule, la modifier et enregistrer les modifications. Générer les 7 nombres à partir d&apos;une date de naissance.</p>
-      </CardHeader>
+    <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+      {/* ── Les 7 expressions ── */}
+      <section
+        aria-labelledby="formulas-title"
+        className="border-line bg-paper shadow-sheet rounded-xl border p-5 md:p-6"
+      >
+        <h2 id="formulas-title" className="eyebrow text-brand-deep">
+          Les 7 formules
+        </h2>
+        <p className="text-ink-muted mt-2 text-sm">
+          Sélectionnez une formule pour modifier son expression. La position
+          détermine le rôle symbolique imprimé dans le PMI.
+        </p>
 
-      <Image
-          src="/pictures/formule-tuto.png"
-          alt="Bannière des formules"
-          width={220}
-          height={220}
-          className="mb-4 self-center"
-        />
+        {loading ? (
+          <div className="mt-5 space-y-2" aria-busy="true">
+            <span className="sr-only">Chargement des formules…</span>
+            {Array.from({ length: 7 }).map((_, index) => (
+              <Skeleton key={index} className="h-14 w-full rounded-lg" />
+            ))}
+          </div>
+        ) : (
+          <ul className="mt-5 space-y-2">
+            {functions.map((f) => {
+              const isSelected = selectedFunction?.id === f.id;
+              const error = errorsByNumber.get(f.number);
 
-        <hr className="my-6 border-t border-muted" />
+              return (
+                <li
+                  key={f.id}
+                  className={`rounded-lg border transition-colors ${
+                    isSelected
+                      ? "border-brand bg-brand-veil"
+                      : error
+                        ? "border-destructive/40 bg-alert-wash"
+                        : "border-line"
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setSelectedFunction(isSelected ? null : f)}
+                    aria-expanded={isSelected}
+                    className="flex w-full cursor-pointer items-center gap-3 rounded-lg p-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+                  >
+                    <span
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
+                        error
+                          ? "bg-alert-wash text-destructive"
+                          : "bg-brand-wash text-brand-deep"
+                      }`}
+                    >
+                      {f.number}
+                    </span>
 
-      <CardContent className="space-y-8">
-        
-        {/* Étape 1 : Sélection */}
-        <section className="flex flex-col">
-          <h2 className="text-lg font-semibold mb-2 text-primary italic">Étape 1 : Sélectionner une formule</h2>
-          {loading ? (
-            <Loader2 className="animate-spin text-primary mx-auto" />
-          ) : (
-            <Select
-              onValueChange={(val) => {
-                const f = functions.find((f) => f.id === val) || null;
-                setSelectedFunction(f);
-              }}
-              value={selectedFunction?.id || ""}
-            >
-              <SelectTrigger  className="w-full text-lg self-center text-primary/80 font-bold">
-                <SelectValue placeholder="Sélectionnez une formule..." />
-              </SelectTrigger>
-              <SelectContent>
-                {functions.map((f) => (
-                  <SelectItem key={f.id} value={f.id}>
-                    #{f.number} - {f.expression}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </section>
+                    <span className="min-w-0 flex-1">
+                      <span className="text-ink block text-sm font-medium">
+                        {roleForPosition(f.number) || `Formule ${f.number}`}
+                      </span>
+                      <code className="text-ink-muted block truncate font-mono text-[0.8125rem]">
+                        {f.expression}
+                      </code>
+                    </span>
 
-        <hr className="my-6 border-t border-muted" />
+                    {error && (
+                      <span className="text-destructive flex shrink-0 items-center gap-1 text-xs font-semibold">
+                        <TriangleAlert aria-hidden="true" className="h-4 w-4" />
+                        Invalide
+                      </span>
+                    )}
 
-        {/* Étape 2 : Modifier */}
-        {selectedFunction && (
-          <section>
-            <h2 className="text-lg font-semibold mb-2 text-primary italic">
-              Étape 2 : Modifier la formule #{selectedFunction.number}
-            </h2>
-            <Label className="pb-2">Expression de la formule mathématique</Label>
-            <Input
-              className="md:w-1/3 w-full"
-              value={selectedFunction.expression}
-              onChange={(e) =>
-                setSelectedFunction({ ...selectedFunction, expression: e.target.value })
-              }
+                    <ChevronDown
+                      aria-hidden="true"
+                      className={`text-ink-muted h-4 w-4 shrink-0 transition-transform ${
+                        isSelected ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+
+                  {isSelected && selectedFunction && (
+                    <div className="border-line/70 space-y-3 border-t px-3 pt-4 pb-4">
+                      <div>
+                        <Label htmlFor="formula-expression" className="pb-2">
+                          Expression de la formule {selectedFunction.number}
+                        </Label>
+                        <Input
+                          id="formula-expression"
+                          className="bg-paper font-mono"
+                          spellCheck={false}
+                          autoComplete="off"
+                          aria-describedby={error ? "formula-error" : undefined}
+                          aria-invalid={Boolean(error)}
+                          value={selectedFunction.expression}
+                          onChange={(e) =>
+                            setSelectedFunction({
+                              ...selectedFunction,
+                              expression: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+
+                      {error && (
+                        <p
+                          id="formula-error"
+                          role="alert"
+                          className="text-destructive text-sm"
+                        >
+                          {error}
+                        </p>
+                      )}
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Button onClick={handleSave} disabled={saving}>
+                          {saving ? (
+                            <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Save aria-hidden="true" className="h-4 w-4" />
+                          )}
+                          Enregistrer
+                        </Button>
+                        <span className="text-ink-muted text-[0.8125rem]">
+                          Testez ensuite l&apos;expression dans le banc d&apos;essai.
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
+        <details className="border-line mt-5 rounded-lg border">
+          <summary className="text-ink cursor-pointer list-none px-4 py-3 text-sm font-medium select-none">
+            Aide-mémoire : les variables disponibles
+          </summary>
+
+          <div className="border-line/70 border-t px-4 py-4">
+            <ul className="grid gap-x-8 gap-y-1 sm:grid-cols-2">
+              {availableVariables.map((variable) => (
+                <li key={variable.name} className="flex items-baseline gap-3 py-1">
+                  <code className="text-primary shrink-0 font-mono text-sm">
+                    {variable.name}
+                  </code>
+                  <span aria-hidden="true" className="leader-dots" />
+                  <span className="text-ink-muted shrink-0 text-sm">
+                    {variable.meaning}
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            <Image
+              src="/pictures/formule-tuto.png"
+              alt="Schéma de composition d'une formule à partir d'une date de naissance"
+              width={220}
+              height={220}
+              className="mt-4"
             />
-          </section>
+          </div>
+        </details>
+      </section>
+
+      {/* ── Banc d'essai ── */}
+      <section
+        aria-labelledby="testbench-title"
+        className="border-line bg-paper shadow-sheet rounded-xl border p-5 lg:sticky lg:top-6 md:p-6"
+      >
+        <h2 id="testbench-title" className="eyebrow text-brand-deep">
+          Banc d&apos;essai
+        </h2>
+        <p className="text-ink-muted mt-2 text-sm">
+          Une date de naissance, et les 7 formules donnent les numéros de forces
+          correspondants. Rien n&apos;est enregistré.
+        </p>
+
+        <div className="mt-5 space-y-3">
+          <div>
+            <Label htmlFor="testbench-date" className="pb-2">
+              Date de naissance
+            </Label>
+            <Input
+              id="testbench-date"
+              type="date"
+              className="bg-paper"
+              onChange={(e) => setBirthDate(new Date(e.target.value))}
+            />
+          </div>
+
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={handleGenerateNumbers}
+          >
+            <Calculator aria-hidden="true" className="h-4 w-4" />
+            Calculer les 7 numéros
+          </Button>
+        </div>
+
+        {generatedNumbers.length > 0 && (
+          <ol className="mt-5 space-y-1" aria-live="polite">
+            {generatedNumbers.map((n) => (
+              <li key={n.title} className="flex items-baseline gap-3 py-1.5">
+                <span className="text-ink-muted font-display w-4 shrink-0 text-sm">
+                  {n.title}
+                </span>
+                <span className="text-ink-muted min-w-0 truncate text-sm">
+                  {roleForPosition(n.title)}
+                </span>
+                <span aria-hidden="true" className="leader-dots" />
+                {n.error ? (
+                  <span className="text-destructive shrink-0 text-sm font-semibold">
+                    erreur
+                  </span>
+                ) : (
+                  <span className="text-primary font-display shrink-0 text-lg">
+                    {n.result}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ol>
         )}
 
-        <hr className="my-6 border-t border-muted" />
-
-        {/* Étape 3 : Enregistrer */}
-        {selectedFunction && (
-          <section className="w-full flex flex-col">
-            <h2 className="text-lg font-semibold mb-2 text-primary italic">Étape 3 : Enregistrer les modifications pour la formule #{selectedFunction.number}</h2>
-            <Button size={"lg"}  onClick={handleSave} disabled={saving} className="self-center">
-              {saving ? (
-                <>
-                  <Loader2 className="animate-spin w-4 h-4" />
-                </>
-              ) : (
-                <Save className="w-4 h-4" />
-              )}
-              <span className="pb-1">Enregistrer les modifications</span>
-            </Button>
-          </section>
-        )}
-
-        <hr className="my-6 border-t border-muted" />
-
-        {/* Étape 4 : Générer les nombres */}
-        {selectedFunction && (
-          <section>
-            <h2 className="text-lg font-semibold mb-2 text-primary italic">Étape 4 : Générer les 7 nombres</h2>
-            <Label className="pb-2">Sélection d&apos;une date de naissance</Label>
-            <div className="flex flex-col gap-2">
-              <Input
-                type="date"
-                className="md:w-1/3 w-full"
-                onChange={(e) => setBirthDate(new Date(e.target.value))}
-              />
-              <Button variant="outline" className="mt-2 w-auto self-center flex items-center gap-2" size={"lg"} onClick={handleGenerateNumbers}>
-                <Calculator className="w-4 h-4" />
-                <span className="pb-1">Générer les 7 nombres correspondant aux 7 aptitudes</span>
-              </Button>
-            </div>
-
-            {generatedNumbers.length > 0 && (
-              <div className="mt-4 space-y-2 flex flex-row gap-10 items-center justify-center">
-                {generatedNumbers.map((n, i) => (
-                  <div key={i} className="text-lg">
-                    <strong>Formule {n.title} :</strong> <span className="text-primary font-bold">{n.result}</span>
-                  </div>
+        {generatedNumbers.some((n) => n.error) && (
+          <div
+            role="alert"
+            className="bg-alert-wash border-destructive/30 mt-4 rounded-lg border p-3"
+          >
+            <p className="text-destructive flex items-center gap-2 text-sm font-semibold">
+              <TriangleAlert aria-hidden="true" className="h-4 w-4" />
+              Expressions à corriger
+            </p>
+            <ul className="text-destructive mt-2 space-y-1 text-[0.8125rem]">
+              {generatedNumbers
+                .filter((n) => n.error)
+                .map((n) => (
+                  <li key={n.title}>
+                    Formule {n.title} : {n.error}
+                  </li>
                 ))}
-              </div>
-            )}
-          </section>
+            </ul>
+          </div>
         )}
-      </CardContent>
-    </Card>
+      </section>
+    </div>
   );
 }

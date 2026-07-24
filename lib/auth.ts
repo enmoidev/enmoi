@@ -8,7 +8,23 @@ import { customSession } from "better-auth/plugins";
 import { Resend } from 'resend';
 import { reactResetPasswordEmail } from "./email/reset-password";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Le client Resend est créé à la demande, et non au chargement du module : son
+// constructeur lève si la clé est absente, ce qui faisait échouer le `next build`
+// entier alors que l'envoi d'e-mail ne sert qu'à la réinitialisation de mot de passe.
+let resendClient: Resend | null = null;
+
+function getResend(): Resend {
+  const apiKey = process.env.RESEND_API_KEY;
+
+  if (!apiKey) {
+    throw new Error(
+      "RESEND_API_KEY n'est pas défini : impossible d'envoyer l'e-mail de réinitialisation."
+    );
+  }
+
+  resendClient ??= new Resend(apiKey);
+  return resendClient;
+}
 
 async function findUser(userId: string) {
 
@@ -35,7 +51,7 @@ export const auth = betterAuth({
         minPasswordLength: 8,
         maxPasswordLength: 64,
         async sendResetPassword(data) {
-            await resend.emails.send({
+            await getResend().emails.send({
                 from: process.env.RESEND_MAIL_FROM!,
                 to: data.user.email,
                 subject: "Réinitialiser votre mot de passe",

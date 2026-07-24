@@ -4,6 +4,14 @@ const betterAuthURL = process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "";
 const isProd = process.env.NODE_ENV === "production";
 
 const nextConfig: NextConfig = {
+  // La génération du PMI lit les polices et les gabarits sur le disque. Sans
+  // cette déclaration, l'analyse statique de Next ne les détecte pas (les chemins
+  // sont construits dynamiquement) et les fichiers sont absents du bundle de la
+  // fonction en production. C'est la raison du contournement HTTP précédent.
+  outputFileTracingIncludes: {
+    "/api/pdf": ["./public/fonts/**", "./public/pdf-design/**"],
+  },
+
   async headers() {
     return [
       {

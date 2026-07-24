@@ -1,11 +1,10 @@
-// This is Prisma schema file,
-// generate new prisma file --> npx prisma generate + (npx @better-auth/cli generate if init betterauth prisma)
-// see data --> npx prisma studio
-
-// migration dev --> npx prisma migrate dev --name describe-your-change (.env de dev)
-// migration prod --> npm run migrate:postgres (.env de prod) --> deploy all migrations ever created on production database
-
-// to reset db --> delete migration --> npx prisma migrate reset --> npx prisma generate --> npx prisma migrate dev --name init
+// Schéma Prisma — EnMoi
+//
+// Commandes utiles :
+//   npx prisma studio                              inspecter la base
+//   npx prisma generate                            régénérer le client
+//   npx prisma migrate dev --name <description>    migration en dev (.env)
+//   npm run migrate:postgres                       applique les migrations en prod (.env.production)
 
 generator client {
   provider = "prisma-client-js"
@@ -21,23 +20,102 @@ enum Role {
   CUSTOMER
 }
 
+// ---------------------------------------------------------------------------
+// Métier EnMoi
+// ---------------------------------------------------------------------------
+
+/// Une des 100 Forces (anciennement « aptitude »).
+/// Le contenu rédactionnel n'est plus en base : le client fournit 2 pages PNG
+/// (A et B) par force, déposées via le back-office et stockées sur S3.
+/// Les clés sont nullable — une force peut exister avant que ses visuels
+/// n'aient été déposés.
+model Force {
+  id       String  @id @default(cuid())
+  number   Int     @unique /// 1 à 100, sert à choisir le bon visuel
+  title    String
+  pageAKey String? /// clé S3 de la page A
+  pageBKey String? /// clé S3 de la page B
+
+  /// Noms d'origine des fichiers déposés, conservés pour l'affichage uniquement.
+  /// Ne jamais s'en servir pour construire une clé de stockage.
+  pageAFilename String?
+  pageBFilename String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("force")
+}
+
+/// Les 7 formules mathématiques qui transforment une date de naissance
+/// en 7 numéros de force. Éditables depuis /admin/formules.
+model MathFunction {
+  id         String   @id @default(cuid())
+  number     Int      @unique /// position 1 à 7
+  expression String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("math_function")
+}
+
+model GlobalSettings {
+  id                 String   @id @default(cuid())
+  ambassadorAccounts Int      @default(0)
+  updatedAt          DateTime @updatedAt
+
+  @@map("global_settings")
+}
+
+/// Profil pour lequel un PMI est généré.
+/// Les champs paiement / ambassadeur / quiz relèvent de la phase « espace
+/// utilisateur », pas encore branchée — ne pas s'appuyer dessus côté back-office.
+model BirthProfile {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName  String
+  lastName   String
+  birthDate  DateTime
+  birthPlace String?
+  gender     String?
+
+  pdfLink      String? /// renseigné une fois le PMI généré
+  shortComment String?
+  longComment  String?
+
+  isAmbassador Boolean @default(false)
+  paymentPlan  Int     @default(0) /// 0 = non payé, 1/2/3 = formule choisie
+  quizAnswer   Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("birth_profile")
+}
+
+// ---------------------------------------------------------------------------
+// better-auth — ne pas renommer les tables, l'adaptateur en dépend
+// ---------------------------------------------------------------------------
+
 model User {
-  id            String        @id @default(uuid())
+  id            String    @id @default(uuid())
   firstName     String?
   lastName      String?
   name          String
-  email         String        @unique
-  emailVerified Boolean       @default(false)
+  email         String    @unique
+  emailVerified Boolean   @default(false)
   image         String?
   country       String?
   city          String?
   birthDate     DateTime?
   gender        String?
-  isAmbassador  Boolean       @default(false)  // if true user can create just one BirthProfile with ambassador priviligy and after return to false
-  tokenBalance  Int           @default(0)
-  role          Role          @default(CUSTOMER)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @default(now()) @updatedAt
+  isAmbassador  Boolean   @default(false)
+  tokenBalance  Int       @default(0)
+  role          Role      @default(CUSTOMER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
 
   sessions      Session[]
   accounts      Account[]
@@ -46,50 +124,10 @@ model User {
   @@map("user")
 }
 
-model Aptitude {
-  id                String   @id @default(cuid())
-  number            Int
-  title             String
-  livingDefinition  String
-  emblematicText    String
-  associatedStrengths String[]
-  vigilanceZones    String[]
-  keywords          String[]
-}
-
-model MathFunction {
-  id         String @id @default(cuid())
-  number     Int
-  expression String
-}
-
-model GlobalSettings {
-  id                  String @id @default(cuid())
-  ambassadorAccounts  Int
-}
-
-model BirthProfile {
-  id                String   @id @default(cuid())
-  userId            String
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  firstName         String
-  lastName          String
-  birthDate         DateTime
-  gender            String
-  pdfLink           String
-  shortComment      String?
-  longComment       String?
-  isAmbassador      Boolean  @default(false) // if this BirthProfile is ambassador choice so is free
-  paymentPlan       Int      @default(0) // 0 = not paid, 1/2/3 = plan chosen
-  quizAnswer        Int?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @default(now()) @updatedAt
-}
-
 model Session {
   id        String   @id
   expiresAt DateTime
-  token     String
+  token     String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   ipAddress String?
@@ -97,7 +135,7 @@ model Session {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([token])
+  @@index([userId])
   @@map("session")
 }
 
@@ -117,6 +155,7 @@ model Account {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
+  @@index([userId])
   @@map("account")
 }
 
@@ -128,5 +167,6 @@ model Verification {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now()) @updatedAt
 
+  @@index([identifier])
   @@map("verification")
 }

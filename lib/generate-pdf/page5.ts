@@ -1,36 +1,10 @@
-import path from "path";
 import { countCharacters, formatDateFR, simplifyNameForDesign } from "../utils";
-import axios from "axios";
-import fs from "fs";
+import { loadDesignAsset } from "./designAssets";
 
 export async function renderPage5(doc: PDFKit.PDFDocument,firstName: string,lastName: string,birthDate: string,birthPlace: string) {
 
-  const isProd = process.env.NODE_ENV === "production";
-
-  let backgroundImageBuffer: Buffer;
-  let arrowCircleImageBuffer: Buffer;
-
-  if (isProd) {
-
-    const backgroundImageUrl = `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://www.myinyou.com"}/pdf-design/page-5.png`;
-    const responseImageBackgroundUrl = await axios.get(backgroundImageUrl, { responseType: "arraybuffer" });
-    backgroundImageBuffer = Buffer.from(responseImageBackgroundUrl.data);
-
-    const arrowCircleImageUrl = `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://www.myinyou.com"}/pdf-design/fleche-demi-cercle.png`;
-    const responseArrowCircleImageUrl = await axios.get(arrowCircleImageUrl, { responseType: "arraybuffer" });
-    arrowCircleImageBuffer = Buffer.from(responseArrowCircleImageUrl.data);
-
-  } 
-  
-  else {
-
-    const localPathBackgroundImage = path.resolve("./public/pdf-design/page-5.png");
-    backgroundImageBuffer = fs.readFileSync(localPathBackgroundImage);
-
-    const localPathArrowImage = path.resolve("./public/pdf-design/fleche-demi-cercle.png");
-    arrowCircleImageBuffer = fs.readFileSync(localPathArrowImage);
-
-  }
+  const backgroundImageBuffer = loadDesignAsset("page-5.png");
+  const arrowCircleImageBuffer = loadDesignAsset("fleche-demi-cercle.png");
 
   const turquoise_color = "#28939f";
   const pageWidth = doc.page.width;

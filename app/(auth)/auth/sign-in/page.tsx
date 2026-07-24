@@ -60,19 +60,18 @@ export default function SignIn() {
 
     <div className="flex min-h-screen">
 
-    {/* <Image src="/logo/logo-inyou.png" alt="logo de inYou" width={180} height={38} priority className="absolute top-0 left-0 z-10 p-1"/> */}
-
     <div className="hidden lg:block lg:w-3/5 relative">
 
-      <Image src="/pictures/main-inyou.png" alt="photo principale inyou" fill className="object-cover" priority/>
+      <Image src="/pictures/main-enmoi.png" alt="" fill sizes="60vw" className="object-cover" priority/>
 
     </div>
 
     <div className="w-full lg:w-3/5 flex flex-col items-center justify-center mx-4 sm:mx-6">
 
     <div className="justify-center items-center text-center lg:p-8 w-full p-4 lg:w-2/3">
+      <Image src="/logo/logo-enmoi.png" alt="EnMoi" width={180} height={55} priority className="mx-auto mb-6 h-auto w-[150px] rounded"/>
       <h1 className="text-3xl">Bonjour !</h1>
-      <p className="pt-1 text-black">Bienvenue sur l&apos;application <i>inYou</i> pour la découverte de son alignement inné-acquis et découvrir son potentiel mental.</p>
+      <p className="pt-1">Bienvenue sur l&apos;application <b>EnMoi</b>, pour découvrir votre alignement inné-acquis et votre potentiel mental.</p>
     </div>
 
     <Card className="w-full lg:m-4 max-w-md shadow-lg">

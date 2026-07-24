@@ -7,8 +7,10 @@ interface BetterAuthResetPasswordEmailProps {
 
 export const ResetPasswordEmail = ({username,resetLink,}: BetterAuthResetPasswordEmailProps) => {
 
-	const previewText = `Réinitialiser le mot de passe inyou`;
-	const imageurl = `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL_PROD}/logo/logo-inyou.png`;
+	const previewText = `Réinitialiser votre mot de passe EnMoi`;
+	// Les clients de messagerie ne chargent ni polices ni composants : le logotype
+	// doit être une image servie en absolu depuis le site déployé.
+	const imageurl = `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL_PROD}/logo/logo-enmoi.png`;
 
 	return (
 
@@ -24,10 +26,10 @@ export const ResetPasswordEmail = ({username,resetLink,}: BetterAuthResetPasswor
 
 					<Container className="border border-solid border-[#eaeaea] rounded my-[40px] mx-auto p-[20px] max-w-[465px]">
 
-						<Img src={imageurl} alt="Logo inYou" width="120" height="auto" className="mx-auto my-[20px]"/>
+						<Img src={imageurl} alt="EnMoi" width="150" height="auto" className="mx-auto my-[20px] rounded"/>
 
 						<Heading className="text-black text-[24px] font-normal text-center p-0 my-[30px] mx-0">
-							Réinitialisez votre <strong>mot de passe</strong> depuis l&apos;application de inYou.
+							Réinitialisez votre <strong>mot de passe</strong> sur l&apos;application EnMoi.
 						</Heading>
 
 						<Text className="text-black text-[14px] leading-[24px]">
@@ -35,7 +37,7 @@ export const ResetPasswordEmail = ({username,resetLink,}: BetterAuthResetPasswor
 						</Text>
 
 						<Text className="text-black text-[14px] leading-[24px]">
-							Nous avons reçu une demande de réinitialisation du mot de passe de votre compte inYou. Si vous n&apos;êtes pas à l&apos;origine de cette demande, vous pouvez ignorer cet e-mail en toute sécurité.
+							Nous avons reçu une demande de réinitialisation du mot de passe de votre compte EnMoi. Si vous n&apos;êtes pas à l&apos;origine de cette demande, vous pouvez ignorer cet e-mail en toute sécurité.
 						</Text>
 
 						<Section className="text-center mt-[32px] mb-[32px]">

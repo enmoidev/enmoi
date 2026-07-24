@@ -1,7 +1,5 @@
-import path from "path";
 import { fitTextToWidth } from "../utils";
-import axios from "axios";
-import fs from "fs";
+import { loadDesignAsset } from "./designAssets";
 
 /**
  * Dessine une aptitude dans un rounded rectangle adaptatif
@@ -50,24 +48,7 @@ function drawAptitude(
 
 export async function renderPage6(doc: PDFKit.PDFDocument, firstName: string, lastName: string, aptitudesTitle: string[]) {
 
-  const isProd = process.env.NODE_ENV === "production";
-
-  let backgroundImageBuffer: Buffer;
-
-  if (isProd) {
-
-    const backgroundImageUrl = `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://www.myinyou.com"}/pdf-design/page-6.png`;
-    const responseImageBackgroundUrl = await axios.get(backgroundImageUrl, { responseType: "arraybuffer" });
-    backgroundImageBuffer = Buffer.from(responseImageBackgroundUrl.data);
-
-  } 
-  
-  else {
-
-    const localPathBackgroundImage = path.resolve("./public/pdf-design/page-6.png");
-    backgroundImageBuffer = fs.readFileSync(localPathBackgroundImage);
-
-  }
+  const backgroundImageBuffer = loadDesignAsset("page-6.png");
 
   const pageWidth = doc.page.width;
   const pageHeight = doc.page.height;
