@@ -23,7 +23,6 @@ export default function SignIn() {
   
   const router = useRouter();
 
-  const adminsName = process.env.NEXT_PUBLIC_NAME_ADMIN?.split(",") || [];
 
     const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
 
@@ -44,12 +43,14 @@ export default function SignIn() {
 
             setLoading(false);
 
-            if (ctx.data?.user.name && adminsName.includes(ctx.data.user.name)) {
-              router.push("/admin");
-            } 
-            else {
-              router.push("/account");
-            }
+            // La destination suit le rôle porté par la session. L'implémentation
+            // précédente comparait le nom de l'utilisateur à une liste exposée
+            // côté navigateur via NEXT_PUBLIC_NAME_ADMIN : deux administrateurs
+            // homonymes, ou un simple changement de nom, faussaient la redirection.
+            // La protection réelle reste le contrôle de rôle du layout serveur.
+            const role = (ctx.data?.user as { role?: string } | undefined)?.role;
+
+            router.push(role === "ADMIN" ? "/admin" : "/account");
           },
       });
     };

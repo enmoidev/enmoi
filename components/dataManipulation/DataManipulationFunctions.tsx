@@ -51,7 +51,7 @@ export default function DataManipulationFunctions() {
         setFunctions(data);
       }
 
-      catch (error) {
+      catch {
         toast.error("Impossible de charger les formules");
       }
 

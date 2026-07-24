@@ -29,8 +29,8 @@ export default function DataManipulationGlobalSettings() {
         setAmbassadorAccounts(data.ambassadorAccounts);
       }
 
-      catch (err) {
-        toast.error("Impossible de récupérer les settings");
+      catch {
+        toast.error("Impossible de récupérer les paramètres globaux");
       }
 
       finally {
@@ -54,7 +54,7 @@ export default function DataManipulationGlobalSettings() {
       });
       if (!res.ok) throw new Error();
       toast.success("Paramètres globaux mis à jour !");
-    } catch (err) {
+    } catch {
       toast.error("Erreur lors de la mise à jour des paramètres globaux");
     } finally {
       setSavingSettings(false);
