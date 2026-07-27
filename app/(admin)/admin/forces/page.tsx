@@ -11,10 +11,10 @@ export default function AdminForcesPage() {
   return (
     <>
       <AdminPageHeader
-        eyebrow="Visuels du PMI"
+        eyebrow="Visuels du livrable"
         title="Médiathèque des forces"
         backHref="/admin"
-        description="Chaque force se compose de deux pages fournies en PNG, au format A4 à 300 DPI (2480 × 3508 px). Une force n'entre dans un PMI que lorsque ses deux pages sont déposées."
+        description="Chaque force se compose de deux pages fournies en PNG, au format A4 à 300 DPI (2480 × 3508 px). Une force n'entre dans un livrable que lorsque ses deux pages sont déposées."
       />
 
       <DataManipulationForces />

@@ -9,7 +9,8 @@ import {
   evaluateForceNumber,
   FormulaError,
 } from "@/lib/computeFunctions/computeFunctions";
-import { SYMBOLIC_ROLES, type PdfData, type PdfForce } from "@/types/pdf";
+import { type PdfData, type PdfForce } from "@/types/pdf";
+import { ROLE_COUNT, roleOverlayText } from "@/lib/forces/roles";
 import { getAuthSession } from "@/lib/auth-utils/getAuthSession";
 import { requireRole } from "@/lib/auth-utils/requireRole";
 import { apiError, BusinessError } from "@/lib/api/apiError";
@@ -27,36 +28,58 @@ const requestSchema = z.object({
   birthPlace: z.string().trim().min(1, "Le lieu de naissance est obligatoire."),
   birthDate: z
     .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "La date de naissance doit être au format AAAA-MM-JJ."),
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "La date de naissance doit être au format AAAA-MM-JJ.")
+    .optional(),
+  // Mode test : les 7 numéros de force sont choisis directement, au lieu d'être
+  // calculés à partir de la date de naissance. Réservé au back-office pour valider
+  // l'assemblage du livrable sans dépendre des formules.
+  forceNumbers: z
+    .array(z.number().int().min(1).max(100))
+    .length(7, "Il faut exactement 7 numéros de force.")
+    .optional(),
 });
+
+/// Calcule les 7 numéros de force à partir de la date de naissance et des formules.
+async function computeForceNumbers(birthDate: string): Promise<number[]> {
+  const variables = buildBirthVariables(new Date(birthDate));
+
+  const formulas = await prisma.mathFunction.findMany({ orderBy: { number: "asc" } });
+
+  if (formulas.length !== ROLE_COUNT) {
+    throw new BusinessError(
+      `${ROLE_COUNT} formules sont attendues, ${formulas.length} sont enregistrées. ` +
+        `Complétez-les depuis /admin/formules.`
+    );
+  }
+
+  // Chaque formule donne le numéro de la force occupant sa position.
+  // Ce numéro sert uniquement à retrouver le visuel : il n'est jamais imprimé.
+  return formulas.map((formula, index) =>
+    evaluateForceNumber(formula.expression, variables, index + 1)
+  );
+}
 
 export async function POST(req: Request) {
   try {
     const session = await getAuthSession();
     requireRole(session, ["ADMIN"]);
 
-    const { firstName, lastName, birthPlace, birthDate } = requestSchema.parse(
-      await req.json()
-    );
+    const { firstName, lastName, birthPlace, birthDate, forceNumbers: chosenNumbers } =
+      requestSchema.parse(await req.json());
 
-    const variables = buildBirthVariables(new Date(birthDate));
-
-    const formulas = await prisma.mathFunction.findMany({
-      orderBy: { number: "asc" },
-    });
-
-    if (formulas.length !== SYMBOLIC_ROLES.length) {
-      throw new BusinessError(
-        `${SYMBOLIC_ROLES.length} formules sont attendues, ${formulas.length} sont enregistrées. ` +
-          `Complétez-les depuis /admin/formules.`
-      );
+    // Deux modes : soit les numéros sont fournis (test), soit ils sont calculés
+    // à partir de la date de naissance.
+    let forceNumbers: number[];
+    if (chosenNumbers) {
+      forceNumbers = chosenNumbers;
+    } else {
+      if (!birthDate) {
+        throw new BusinessError(
+          "Fournissez une date de naissance, ou choisissez les 7 forces manuellement."
+        );
+      }
+      forceNumbers = await computeForceNumbers(birthDate);
     }
-
-    // Chaque formule donne le numéro de la force occupant sa position.
-    // Ce numéro sert uniquement à retrouver le visuel : il n'est jamais imprimé.
-    const forceNumbers = formulas.map((formula, index) =>
-      evaluateForceNumber(formula.expression, variables, index + 1)
-    );
 
     const forces = await prisma.force.findMany({
       where: { number: { in: forceNumbers } },
@@ -94,7 +117,7 @@ export async function POST(req: Request) {
         number: force.number,
         title: force.title,
         position,
-        symbolicRole: SYMBOLIC_ROLES[index],
+        symbolicRole: roleOverlayText(position),
         pageA,
         pageB,
       });
@@ -104,7 +127,9 @@ export async function POST(req: Request) {
       firstName,
       lastName,
       birthPlace,
-      birthDate,
+      // En mode test, la date de naissance peut être absente : les pages
+      // d'introduction l'affichent alors vide, sans incidence sur les pages de force.
+      birthDate: birthDate ?? "",
       forces: pdfForces,
     };
     const pdfBuffer = await generatePdf(pdfData);

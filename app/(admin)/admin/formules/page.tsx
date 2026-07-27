@@ -14,7 +14,7 @@ export default function AdminFormulesPage() {
         eyebrow="Calcul des forces"
         title="Formules"
         backHref="/admin"
-        description="Les 7 expressions qui transforment une date de naissance en 7 numéros de forces. Une modification s'applique à tous les PMI générés ensuite."
+        description="Les 7 expressions qui transforment une date de naissance en 7 numéros des forces. Une modification s'applique à tous les livrables générés ensuite."
       />
 
       <DataManipulationFunctions />

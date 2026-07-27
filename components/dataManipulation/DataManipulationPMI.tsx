@@ -1,8 +1,8 @@
 "use client";
 
-// Génération du PMI — identité d'une personne, puis téléchargement du document
+// Génération du livrable — identité d'une personne, puis téléchargement du document
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -10,23 +10,67 @@ import { toast } from "react-hot-toast";
 import { CircleCheck, FileDown, Loader2, TriangleAlert } from "lucide-react";
 import { Label } from "../ui/label";
 import { forceRoles } from "@/components/admin/forceRoles";
+import type { ForceType } from "@/types/modelPrisma";
+import { isForceComplete } from "@/types/modelPrisma";
+
+/// Deux façons de choisir les 7 forces : par la date de naissance (réel) ou en
+/// les désignant à la main (test, pour valider l'assemblage sans les formules).
+type Mode = "birthDate" | "manual";
 
 export default function DataManipulationPMI() {
 
+  const [mode, setMode] = useState<Mode>("birthDate");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [birthPlace, setBirthPlace] = useState("");
   const [birthDate, setBirthDate] = useState<Date | null>(null);
+  // Numéro de force choisi pour chacune des 7 positions (mode test).
+  const [chosenForces, setChosenForces] = useState<(number | null)[]>(
+    () => Array(7).fill(null)
+  );
+  const [completeForces, setCompleteForces] = useState<ForceType[]>([]);
   const [loading, setLoading] = useState(false);
   // L'API nomme précisément ce qui bloque (visuel absent, formule hors bornes) :
   // ce message est affiché tel quel, le toast seul le faisait disparaître.
   const [apiError, setApiError] = useState<string | null>(null);
   const [lastFileName, setLastFileName] = useState<string | null>(null);
 
+  // Les forces sélectionnables en mode test sont celles dont les deux visuels
+  // sont déposés : inutile d'en proposer une qui ferait échouer la génération.
+  const loadCompleteForces = useCallback(async () => {
+    try {
+      const res = await fetch("/api/forces");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Chargement impossible.");
+      setCompleteForces((data.forces as ForceType[]).filter(isForceComplete));
+    } catch {
+      // Silencieux : le mode test reste utilisable en saisissant les numéros,
+      // et le mode date de naissance n'en dépend pas.
+    }
+  }, []);
+
+  useEffect(() => {
+    loadCompleteForces();
+  }, [loadCompleteForces]);
+
+  const setChosenAt = (index: number, value: number | null) => {
+    setChosenForces((current) => current.map((n, i) => (i === index ? value : n)));
+  };
+
   const handleGeneratePMI = async () => {
 
-    if (!firstName || !lastName || !birthPlace || !birthDate) {
-      toast.error("Veuillez remplir tous les champs avant de générer le PMI.");
+    if (!firstName || !lastName || !birthPlace) {
+      toast.error("Renseignez au moins le nom, le prénom et le lieu de naissance.");
+      return;
+    }
+
+    if (mode === "birthDate" && !birthDate) {
+      toast.error("Veuillez renseigner la date de naissance.");
+      return;
+    }
+
+    if (mode === "manual" && chosenForces.some((n) => n === null)) {
+      toast.error("Choisissez une force pour chacune des 7 positions.");
       return;
     }
 
@@ -36,34 +80,44 @@ export default function DataManipulationPMI() {
       setApiError(null);
       setLastFileName(null);
 
+      const body =
+        mode === "manual"
+          ? {
+              firstName,
+              lastName,
+              birthPlace,
+              forceNumbers: chosenForces as number[],
+            }
+          : {
+              firstName,
+              lastName,
+              birthPlace,
+              birthDate: birthDate!.toISOString().split("T")[0],
+            };
+
       const res = await fetch("/api/pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstName: firstName,
-          lastName: lastName,
-          birthPlace: birthPlace,
-          birthDate: birthDate.toISOString().split("T")[0],
-        }),
+        body: JSON.stringify(body),
       });
 
       if (!res.ok) {
         const payload = await res.json().catch(() => null);
         throw new Error(
-          payload?.error ?? "La génération du PMI a échoué. Réessayez dans un instant."
+          payload?.error ?? "La génération du livrable a échoué. Réessayez dans un instant."
         );
       }
 
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
-      const fileName = `PMI_${firstName}_${lastName}.pdf`;
+      const fileName = `livrable_${firstName}_${lastName}.pdf`;
       link.href = url;
       link.download = fileName;
       link.click();
 
       setLastFileName(fileName);
-      toast.success("PMI généré avec succès !");
+      toast.success("Livrable généré avec succès !");
     }
 
     catch (error) {
@@ -71,7 +125,7 @@ export default function DataManipulationPMI() {
       const message =
         error instanceof Error
           ? error.message
-          : "Une erreur est survenue lors de la génération du PMI.";
+          : "Une erreur est survenue lors de la génération du livrable.";
       setApiError(message);
       toast.error(message);
     }
@@ -91,8 +145,8 @@ export default function DataManipulationPMI() {
           Identité de la personne
         </h2>
         <p className="text-ink-muted mt-2 text-sm">
-          Le prénom est surimprimé sur chaque page du document ; la date de naissance
-          détermine les 7 forces. Tous les champs sont nécessaires.
+          Le prénom est surimprimé sur chaque page du document. Les 7 forces sont
+          déterminées par la date de naissance, ou choisies à la main pour un test.
         </p>
 
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -136,18 +190,89 @@ export default function DataManipulationPMI() {
               onChange={(e) => setBirthPlace(e.target.value)}
             />
           </div>
+        </div>
 
-          <div>
-            <Label htmlFor="pmi-birth-date" className="pb-2">
-              Date de naissance
-            </Label>
-            <Input
-              id="pmi-birth-date"
-              type="date"
-              className="bg-paper"
-              onChange={(e) => setBirthDate(new Date(e.target.value))}
-            />
+        {/* Choix du mode de sélection des 7 forces. */}
+        <div className="border-line mt-6 border-t pt-5">
+          <div className="flex gap-1 rounded-md border border-neutral-200 p-1">
+            {(
+              [
+                ["birthDate", "Par date de naissance"],
+                ["manual", "Choix manuel (test)"],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setMode(value)}
+                className={`flex-1 rounded px-3 py-1.5 text-sm transition-colors ${
+                  mode === value
+                    ? "bg-primary text-white"
+                    : "text-neutral-600 hover:bg-neutral-100"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
+
+          {mode === "birthDate" ? (
+            <div className="mt-4 max-w-xs">
+              <Label htmlFor="pmi-birth-date" className="pb-2">
+                Date de naissance
+              </Label>
+              <Input
+                id="pmi-birth-date"
+                type="date"
+                className="bg-paper"
+                onChange={(e) => setBirthDate(new Date(e.target.value))}
+              />
+              <p className="text-ink-muted mt-1.5 text-[0.8125rem]">
+                Les 7 formules la transforment en 7 numéros de forces.
+              </p>
+            </div>
+          ) : (
+            <div className="mt-4">
+              <p className="text-ink-muted text-[0.8125rem]">
+                Choisissez la force placée à chaque position. Seules les forces dont
+                les deux visuels sont déposés sont proposées
+                {completeForces.length > 0 ? ` (${completeForces.length} disponibles)` : ""}.
+              </p>
+
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {forceRoles.map((role, index) => (
+                  <div key={role}>
+                    <Label htmlFor={`pmi-force-${index}`} className="pb-2">
+                      <span className="text-brand font-display mr-1.5">{index + 1}</span>
+                      {role}
+                    </Label>
+                    <select
+                      id={`pmi-force-${index}`}
+                      className="border-input bg-paper h-9 w-full rounded-md border px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+                      value={chosenForces[index] ?? ""}
+                      onChange={(e) =>
+                        setChosenAt(index, e.target.value ? Number(e.target.value) : null)
+                      }
+                    >
+                      <option value="">— Choisir une force —</option>
+                      {completeForces.map((force) => (
+                        <option key={force.id} value={force.number}>
+                          {force.number}. {force.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+
+              {completeForces.length === 0 && (
+                <p className="text-destructive mt-3 text-[0.8125rem]">
+                  Aucune force complète pour l&apos;instant. Déposez d&apos;abord des
+                  visuels depuis la médiathèque.
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="border-line mt-6 flex flex-col gap-3 border-t pt-5 sm:flex-row sm:items-center">
@@ -160,7 +285,7 @@ export default function DataManipulationPMI() {
             ) : (
               <>
                 <FileDown aria-hidden="true" className="h-4 w-4" />
-                Générer le PMI
+                Générer le livrable
               </>
             )}
           </Button>
@@ -176,7 +301,7 @@ export default function DataManipulationPMI() {
           >
             <p className="text-destructive flex items-center gap-2 font-semibold">
               <TriangleAlert aria-hidden="true" className="h-4 w-4 shrink-0" />
-              Le PMI n&apos;a pas été généré
+              Le livrable n&apos;a pas été généré
             </p>
             <p className="text-destructive mt-2 text-sm">{apiError}</p>
             <Link

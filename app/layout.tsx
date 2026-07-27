@@ -5,36 +5,37 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 
-// Les trois polices de la marque, auto-hébergées : ce sont exactement celles du
-// PMI imprimé, ce qui aligne l'interface et le livrable. Aucune requête externe,
-// la CSP de next.config.ts n'autorise aucune origine tierce.
-const aktivGrotesk = localFont({
+// Charte typographique de la marque (mail client de juillet 2026), auto-hébergée :
+// ce sont exactement les polices du livrable imprimé, ce qui aligne l'interface et
+// le document. Aucune requête externe, la CSP de next.config.ts n'autorise aucune
+// origine tierce.
+
+// Cabin : la police de texte courant (corps de l'interface).
+const cabin = localFont({
   src: [
-    { path: "../public/fonts/AktivGrotesk-Regular.ttf", weight: "400", style: "normal" },
-    { path: "../public/fonts/AktivGrotesk-Italic.ttf", weight: "400", style: "italic" },
-    { path: "../public/fonts/AktivGrotesk-Medium.ttf", weight: "500", style: "normal" },
-    { path: "../public/fonts/AktivGrotesk-MediumItalic.ttf", weight: "500", style: "italic" },
-    { path: "../public/fonts/AktivGrotesk-SemiBold.ttf", weight: "600", style: "normal" },
-    { path: "../public/fonts/AktivGrotesk-XBold.ttf", weight: "700", style: "normal" },
-    { path: "../public/fonts/AktivGrotesk-XBoldItalic.ttf", weight: "700", style: "italic" },
+    { path: "../public/fonts/Cabin-Regular.ttf", weight: "400", style: "normal" },
+    { path: "../public/fonts/Cabin-Bold.ttf", weight: "700", style: "normal" },
   ],
   variable: "--font-sans-enmoi",
   display: "swap",
   fallback: ["system-ui", "sans-serif"],
 });
 
-// Philosopher : le sérif des intitulés institutionnels du PMI. Réservé aux
-// capitales espacées et aux titres de page.
-const philosopher = localFont({
-  src: [{ path: "../public/fonts/Philosopher-Bold.ttf", weight: "700", style: "normal" }],
+// Georgia : le sérif des titres et intitulés, repris du livrable.
+const georgia = localFont({
+  src: [
+    { path: "../public/fonts/georgia.ttf", weight: "400", style: "normal" },
+    { path: "../public/fonts/georgiab.ttf", weight: "700", style: "normal" },
+  ],
   variable: "--font-display-enmoi",
   display: "swap",
   fallback: ["Georgia", "serif"],
 });
 
-// Rosalia : la script du logotype. Utilisée nulle part ailleurs.
-const rosalia = localFont({
-  src: [{ path: "../public/fonts/Rosalia.otf", weight: "400", style: "normal" }],
+// Gabriola : la script manuscrite du prénom sur le livrable. Réservée aux touches
+// décoratives dans l'interface.
+const gabriola = localFont({
+  src: [{ path: "../public/fonts/Gabriola.ttf", weight: "400", style: "normal" }],
   variable: "--font-script-enmoi",
   display: "swap",
   fallback: ["Georgia", "serif"],
@@ -42,11 +43,11 @@ const rosalia = localFont({
 
 export const metadata: Metadata = {
   title: {
-    default: "EnMoi — Découvre ton potentiel mental inné",
+    default: "EnMoi — Révèle tes forces mentales innées",
     template: "%s | EnMoi",
   },
   description:
-    "EnMoi accompagne le développement personnel à partir de l'inné et de l'acquis, et révèle les 7 forces mentales à travers le PMI (Potentiel Mental Inné).",
+    "EnMoi accompagne le développement personnel à partir de l'inné et de l'acquis, et révèle les 7 forces mentales dans un livrable personnel.",
   applicationName: "EnMoi",
   authors: [{ name: "EnMoi" }],
   // Aucun contenu public n'est encore publié : on n'indexe rien tant que le site
@@ -63,7 +64,7 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
-      className={`${aktivGrotesk.variable} ${philosopher.variable} ${rosalia.variable}`}
+      className={`${cabin.variable} ${georgia.variable} ${gabriola.variable}`}
     >
       <body className="min-h-screen bg-background antialiased">
         <Toaster

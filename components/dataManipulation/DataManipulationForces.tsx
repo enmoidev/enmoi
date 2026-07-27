@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { Check, ImageOff, Loader2, Search, Trash2, Upload } from "lucide-react";
+import { Check, ImageOff, Loader2, Pencil, Search, Trash2, Upload, X } from "lucide-react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Progress } from "../ui/progress";
@@ -44,6 +44,10 @@ export default function DataManipulationForces() {
   const [filter, setFilter] = useState<Filter>("toutes");
   /// Numéro de la force actuellement survolée par un glisser-déposer.
   const [dropTarget, setDropTarget] = useState<number | null>(null);
+  /// Numéro de la force dont le titre est en cours d'édition, et sa saisie.
+  const [editingNumber, setEditingNumber] = useState<number | null>(null);
+  const [draftTitle, setDraftTitle] = useState("");
+  const [savingTitle, setSavingTitle] = useState(false);
 
   const loadForces = useCallback(async () => {
     try {
@@ -103,6 +107,43 @@ export default function DataManipulationForces() {
       toast.error(err instanceof Error ? err.message : "Dépôt impossible.");
     } finally {
       setPendingFor(key, false);
+    }
+  };
+
+  const startEditing = (force: ForceType) => {
+    setEditingNumber(force.number);
+    setDraftTitle(force.title);
+  };
+
+  const cancelEditing = () => {
+    setEditingNumber(null);
+    setDraftTitle("");
+  };
+
+  const handleRenameTitle = async (forceNumber: number) => {
+    const title = draftTitle.trim();
+    if (!title) {
+      toast.error("Le titre ne peut pas être vide.");
+      return;
+    }
+
+    setSavingTitle(true);
+    try {
+      const res = await fetch(`/api/forces/${forceNumber}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Renommage impossible.");
+
+      applyUpdatedForce(data.force);
+      cancelEditing();
+      toast.success(`Titre de la force ${forceNumber} mis à jour.`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Renommage impossible.");
+    } finally {
+      setSavingTitle(false);
     }
   };
 
@@ -331,9 +372,61 @@ export default function DataManipulationForces() {
                     {force.number}
                   </span>
 
-                  <span className="text-ink truncate font-medium">{force.title}</span>
-
-                  <span aria-hidden="true" className="leader-dots hidden sm:block" />
+                  {editingNumber === force.number ? (
+                    <span className="flex min-w-0 flex-1 items-center gap-1.5">
+                      <Input
+                        autoFocus
+                        value={draftTitle}
+                        disabled={savingTitle}
+                        aria-label={`Titre de la force ${force.number}`}
+                        onChange={(e) => setDraftTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleRenameTitle(force.number);
+                          if (e.key === "Escape") cancelEditing();
+                        }}
+                        className="bg-paper h-8"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={savingTitle}
+                        aria-label="Enregistrer le titre"
+                        onClick={() => handleRenameTitle(force.number)}
+                      >
+                        {savingTitle ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Check className="h-4 w-4 text-primary" />
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={savingTitle}
+                        aria-label="Annuler"
+                        onClick={cancelEditing}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </span>
+                  ) : (
+                    <>
+                      <span className="text-ink truncate font-medium">{force.title}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Renommer la force ${force.number}`}
+                        title="Renommer"
+                        onClick={() => startEditing(force)}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <span aria-hidden="true" className="leader-dots hidden sm:block" />
+                    </>
+                  )}
                 </div>
 
                 <div className="flex shrink-0 flex-wrap gap-2">

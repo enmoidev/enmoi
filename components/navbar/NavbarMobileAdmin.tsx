@@ -9,7 +9,7 @@ import toast from "react-hot-toast";
 import { CustomAuthSession } from "@/types/customAuth";
 import { LogOut, Menu, X } from "lucide-react";
 import { adminNavItems } from "./adminNavItems";
-import { BrandMark } from "./BrandMark";
+import { BrandLogo } from "./BrandLogo";
 
 type Props = {
   user: CustomAuthSession["user"];
@@ -59,7 +59,7 @@ export const NavbarMobileAdmin = ({ user }: Props) => {
           href="/admin"
           className="flex min-w-0 items-center gap-3 rounded-md text-white outline-none focus-visible:ring-2 focus-visible:ring-white/70"
         >
-          <BrandMark className="text-3xl" />
+          <BrandLogo tone="white" height={30} priority />
           <span className="eyebrow min-w-0 truncate text-white/90">
             Administration
           </span>

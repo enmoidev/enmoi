@@ -18,7 +18,7 @@ export default function AdminHomePage() {
       title: "Médiathèque des forces",
       shortDescription: "Les 200 visuels des 100 forces",
       content:
-        "Déposez et remplacez les deux pages PNG de chaque force. Une force n'entre dans un PMI que lorsque ses deux pages sont présentes ; l'écran indique combien de forces sont complètes.",
+        "Déposez et remplacez les deux pages PNG de chaque force. Une force n'entre dans un livrable que lorsque ses deux pages sont présentes : l'écran indique combien de forces sont complètes.",
       href: "/admin/forces",
       icon: Images,
       featured: true,
@@ -27,12 +27,12 @@ export default function AdminHomePage() {
       title: "Formules",
       shortDescription: "Les 7 expressions de calcul",
       content:
-        "Modifiez l'expression d'une formule et vérifiez-la immédiatement : une date de naissance suffit à obtenir les 7 numéros de forces correspondants.",
+        "Modifiez l'expression d'une formule et vérifiez-la immédiatement : une date de naissance suffit à obtenir les 7 numéros des forces correspondantes.",
       href: "/admin/formules",
       icon: Sigma,
     },
     {
-      title: "Générer un PMI",
+      title: "Générer un livrable",
       shortDescription: "Le document d'une personne",
       content:
         "Renseignez l'identité et la date de naissance d'une personne. Les 7 forces sont calculées, leurs visuels assemblés, et le PDF se télécharge.",
@@ -54,7 +54,7 @@ export default function AdminHomePage() {
       <AdminPageHeader
         eyebrow="Espace administrateur"
         title="Tableau de bord"
-        description="Tout ce qu'il faut pour préparer et produire un PMI."
+        description="Tout ce qu'il faut pour préparer et produire un livrable."
       />
 
       <div className="grid gap-4 md:grid-cols-2">

@@ -17,6 +17,15 @@ const DESIGN_DIR = path.join(process.cwd(), "public", "pdf-design");
 
 const cache = new Map<string, Buffer>();
 
+/// Pose un gabarit de design en pleine page A4 (sans marge ni recadrage).
+/// Les gabarits sont déjà au format A4 : ils couvrent la page exactement.
+export function drawFullPageDesign(doc: PDFKit.PDFDocument, filename: string) {
+  doc.image(loadDesignAsset(filename), 0, 0, {
+    width: doc.page.width,
+    height: doc.page.height,
+  });
+}
+
 export function loadDesignAsset(filename: string): Buffer {
   const cached = cache.get(filename);
   if (cached) return cached;

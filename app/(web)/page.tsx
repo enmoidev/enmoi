@@ -1,11 +1,12 @@
-// Accueil public — porte d'entrée sobre vers le back-office
+// Accueil public — emplacement réservé au futur site vitrine
 //
-// Ce n'est pas encore le site vitrine : tant que la présentation d'EnMoi n'est
-// pas écrite, cette page ne sert qu'à donner accès à l'authentification.
+// La présentation d'EnMoi n'est pas encore écrite. Cette page tient donc deux
+// rôles : signaler visiblement au client que c'est ici que viendra le site
+// vitrine, et donner accès à l'authentification pour le back-office.
 
 import RedirectIfAuthenticatedServer from "@/lib/auth-utils/redirect-if-authenticated-server";
 import Link from "next/link";
-import { BrandMark } from "@/components/navbar/BrandMark";
+import { BrandLogo } from "@/components/navbar/BrandLogo";
 
 export default async function Home() {
   await RedirectIfAuthenticatedServer();
@@ -13,7 +14,7 @@ export default async function Home() {
   return (
     <div className="bg-desk flex min-h-screen flex-col">
       <header className="flex items-center justify-between gap-4 px-6 py-5 sm:px-10">
-        <BrandMark className="text-brand-deep text-3xl" />
+        <BrandLogo height={40} priority />
 
         <Link
           href="/auth/sign-in"
@@ -25,29 +26,29 @@ export default async function Home() {
 
       <main className="flex flex-1 items-center px-6 pb-24 sm:px-10">
         <div className="mx-auto w-full max-w-2xl">
-          <div className="border-brand/40 border-l-2 pl-6">
-            <p className="eyebrow text-brand-deep">Potentiel Mental Inné</p>
+          {/* Cartouche « emplacement réservé » : le client doit comprendre au
+              premier coup d'œil que le site vitrine prendra place ici. */}
+          <div className="border-line bg-paper shadow-sheet rounded-xl border border-dashed p-8 sm:p-10">
+            <p className="eyebrow text-brand-deep">Site vitrine</p>
 
-            <h1 className="font-display text-ink mt-4 text-[2rem] leading-tight sm:text-[2.75rem]">
-              Révéler ce qui est déjà là.
+            <h1 className="font-display text-ink mt-4 text-[1.75rem] leading-tight sm:text-[2.25rem]">
+              La présentation d&apos;EnMoi prendra place ici.
             </h1>
 
             <p className="text-ink-muted mt-5 text-base leading-relaxed">
-              EnMoi accompagne le développement personnel à partir de l&apos;inné et de
-              l&apos;acquis. À partir d&apos;une date de naissance, sept forces mentales
-              se dessinent et composent le PMI, votre document personnel.
+              Cet espace accueillera le site vitrine : la présentation de la démarche
+              inné-acquis, des 7 forces mentales et du livrable remis à chaque personne.
+              Il reste à concevoir dans une prochaine étape.
+            </p>
+
+            <p className="text-ink-muted mt-3 text-base leading-relaxed">
+              En attendant, le back-office est accessible via le bouton{" "}
+              <span className="text-ink font-medium">Se connecter</span>.
             </p>
           </div>
 
-          <p className="text-ink-muted mt-10 text-sm">
-            Le site de présentation arrive prochainement. En attendant,{" "}
-            <Link
-              href="/auth/sign-in"
-              className="text-brand-deep font-medium underline underline-offset-4"
-            >
-              connectez-vous à votre espace
-            </Link>
-            .
+          <p className="text-ink-muted mt-6 text-sm">
+            Espace réservé — page provisoire, non indexée par les moteurs de recherche.
           </p>
         </div>
       </main>

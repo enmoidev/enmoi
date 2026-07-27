@@ -5,6 +5,7 @@ import {
   A4_HEIGHT_PT,
   A4_WIDTH_PT,
   PAGE_A_FIRST_NAME,
+  PAGE_B_FIRST_NAME,
   PAGE_B_POSITION,
   PAGE_B_SYMBOLIC_ROLE,
   pxToPt,
@@ -50,9 +51,10 @@ export function renderForcePages(
   drawFullPageImage(doc, force.pageA);
   drawInBox(doc, firstName, PAGE_A_FIRST_NAME);
 
-  // --- Page B : visuel + position et rôle symbolique ---
+  // --- Page B : visuel + prénom, position et rôle symbolique ---
   doc.addPage();
   drawFullPageImage(doc, force.pageB);
+  drawInBox(doc, firstName, PAGE_B_FIRST_NAME);
   drawInBox(doc, String(force.position), PAGE_B_POSITION);
   drawInBox(doc, force.symbolicRole, PAGE_B_SYMBOLIC_ROLE);
 }

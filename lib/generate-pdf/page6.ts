@@ -2,9 +2,9 @@ import { fitTextToWidth } from "../utils";
 import { loadDesignAsset } from "./designAssets";
 
 /**
- * Dessine une aptitude dans un rounded rectangle adaptatif
+ * Dessine le titre d'une force dans un rectangle arrondi adaptatif
  */
-function drawAptitude(
+function drawForce(
   doc: PDFKit.PDFDocument,
   text: string,
   posX: number,
@@ -46,7 +46,7 @@ function drawAptitude(
   });
 }
 
-export async function renderPage6(doc: PDFKit.PDFDocument, firstName: string, lastName: string, aptitudesTitle: string[]) {
+export async function renderPage6(doc: PDFKit.PDFDocument, firstName: string, lastName: string, forceTitles: string[]) {
 
   const backgroundImageBuffer = loadDesignAsset("page-6.png");
 
@@ -69,9 +69,9 @@ export async function renderPage6(doc: PDFKit.PDFDocument, firstName: string, la
   const nameX = (pageWidth - nameWidth) / 2 + offsetX;
   doc.text(nameText, nameX, y);
 
-  // === Titre "Mes 7 Aptitudes" ===
+  // === Titre "Mes 7 Forces Mentales" ===
   y += doc.currentLineHeight() + 10;
-  const titleText = "Mes 7 Aptitudes";
+  const titleText = "Mes 7 Forces Mentales";
   doc.font("boldPhilosopher").fontSize(15).fillColor("white");
   const titleWidth = doc.widthOfString(titleText);
   const titleX = (pageWidth - titleWidth) / 2 + offsetX;
@@ -82,35 +82,35 @@ export async function renderPage6(doc: PDFKit.PDFDocument, firstName: string, la
   const centerY = pageHeight / 2 + 20;
 
   const positions = [
-    { x: centerX, y: centerY - 120 },    // aptitude 0 (centrée)
-    { x: centerX + 95, y: centerY - 63 }, // aptitude 1 (fixLeft)
-    { x: centerX + 115, y: centerY + 45 }, // aptitude 2 (fixLeft)
-    { x: centerX + 45, y: centerY + 130 }, // aptitude 3 (fixLeft)
-    { x: centerX - 35, y: centerY + 130 },  // aptitude 4 (fixRight)
-    { x: centerX - 105, y: centerY + 40 },  // aptitude 5 (fixRight)
-    { x: centerX - 80, y: centerY - 65 },  // aptitude 6 (fixRight)
+    { x: centerX, y: centerY - 120 },    // force 0 (centrée)
+    { x: centerX + 95, y: centerY - 63 }, // force 1 (fixLeft)
+    { x: centerX + 115, y: centerY + 45 }, // force 2 (fixLeft)
+    { x: centerX + 45, y: centerY + 130 }, // force 3 (fixLeft)
+    { x: centerX - 35, y: centerY + 130 },  // force 4 (fixRight)
+    { x: centerX - 105, y: centerY + 40 },  // force 5 (fixRight)
+    { x: centerX - 80, y: centerY - 65 },  // force 6 (fixRight)
   ];
 
-  aptitudesTitle.forEach((aptitude, i) => {
+  forceTitles.forEach((title, i) => {
     const pos = positions[i];
 
     if (i === 1 || i === 2 || i === 3) {
       // Bords gauche fixes
-      drawAptitude(doc, aptitude, pos.x, pos.y, {
+      drawForce(doc, title, pos.x, pos.y, {
         turquoiseColor: turquoise_color,
         fontSize: 14,
         fixLeft: pos.x,
       });
     } else if (i === 4 || i === 5 || i === 6) {
       // Bords droits fixes
-      drawAptitude(doc, aptitude, pos.x, pos.y, {
+      drawForce(doc, title, pos.x, pos.y, {
         turquoiseColor: turquoise_color,
         fontSize: 14,
         fixRight: pos.x,
       });
     } else {
-      // Centré (aptitude 0)
-      drawAptitude(doc, aptitude, pos.x, pos.y, {
+      // Centré (force 0)
+      drawForce(doc, title, pos.x, pos.y, {
         turquoiseColor: turquoise_color,
         fontSize: 14,
       });

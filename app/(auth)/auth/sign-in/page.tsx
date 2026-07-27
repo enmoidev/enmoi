@@ -5,10 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { signIn } from "../../../../lib/auth-client";
 import Link from "next/link";
 import toast from 'react-hot-toast';
+import { BrandLogo } from "@/components/navbar/BrandLogo";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import RedirectIfAuthenticatedClient from "../../../../lib/auth-utils/redirect-if-authenticated-client";
@@ -67,10 +68,18 @@ export default function SignIn() {
 
     </div>
 
-    <div className="w-full lg:w-3/5 flex flex-col items-center justify-center mx-4 sm:mx-6">
+    <div className="relative w-full lg:w-3/5 flex flex-col items-center justify-center mx-4 sm:mx-6">
+
+    <Link
+      href="/"
+      className="absolute left-4 top-4 inline-flex items-center gap-1.5 text-sm text-neutral-500 transition-colors hover:text-primary sm:left-6 sm:top-6"
+    >
+      <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+      Retour au site
+    </Link>
 
     <div className="justify-center items-center text-center lg:p-8 w-full p-4 lg:w-2/3">
-      <Image src="/logo/logo-enmoi.png" alt="EnMoi" width={180} height={55} priority className="mx-auto mb-6 h-auto w-[150px] rounded"/>
+      <BrandLogo height={48} priority className="mx-auto mb-6" />
       <h1 className="text-3xl">Bonjour !</h1>
       <p className="pt-1">Bienvenue sur l&apos;application <b>EnMoi</b>, pour découvrir votre alignement inné-acquis et votre potentiel mental.</p>
     </div>

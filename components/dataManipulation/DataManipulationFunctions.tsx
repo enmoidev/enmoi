@@ -138,7 +138,7 @@ export default function DataManipulationFunctions() {
         </h2>
         <p className="text-ink-muted mt-2 text-sm">
           Sélectionnez une formule pour modifier son expression. La position
-          détermine le rôle symbolique imprimé dans le PMI.
+          détermine le rôle symbolique imprimé dans le livrable.
         </p>
 
         {loading ? (
@@ -299,8 +299,8 @@ export default function DataManipulationFunctions() {
           Banc d&apos;essai
         </h2>
         <p className="text-ink-muted mt-2 text-sm">
-          Une date de naissance, et les 7 formules donnent les numéros de forces
-          correspondants. Rien n&apos;est enregistré.
+          Une date de naissance, et les 7 formules donnent les numéros des forces
+          correspondantes. Rien n&apos;est enregistré.
         </p>
 
         <div className="mt-5 space-y-3">

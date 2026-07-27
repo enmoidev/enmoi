@@ -8,7 +8,7 @@ import { usePathname } from "next/navigation";
 import toast from "react-hot-toast";
 import { LogOut } from "lucide-react";
 import { adminNavItems } from "./adminNavItems";
-import { BrandMark } from "./BrandMark";
+import { BrandLogo } from "./BrandLogo";
 
 type Props = {
   user: CustomAuthSession["user"];
@@ -47,7 +47,7 @@ export const NavbarDesktopAdmin = ({ user }: Props) => {
           href="/admin"
           className="w-fit rounded-md text-white outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
         >
-          <BrandMark className="text-4xl" />
+          <BrandLogo tone="white" height={40} priority />
         </Link>
         <p className="eyebrow mt-3 text-white/90">Espace administrateur</p>
       </div>

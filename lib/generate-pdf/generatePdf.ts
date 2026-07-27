@@ -1,10 +1,10 @@
-// Assemblage du PMI : pages d'introduction puis 2 pages par force
+// Assemblage du livrable : pages d'introduction puis 2 pages par force
 
 import PDFDocument from "pdfkit";
 import { PdfData } from "@/types/pdf";
 import { DEFAULT_FONT_PATH, registerFonts } from "./fonts";
+import { drawFullPageDesign } from "./designAssets";
 import { renderForcePages } from "./renderForcePages";
-import { renderPage5 } from "./page5";
 import { renderPage6 } from "./page6";
 
 export async function generatePdf(data: PdfData): Promise<Buffer> {
@@ -19,8 +19,10 @@ export async function generatePdf(data: PdfData): Promise<Buffer> {
   });
 
   // --- Pages d'introduction ---
-  await renderPage5(doc, data.firstName, data.lastName, data.birthDate, data.birthPlace);
+  // Page 4 : fiche explicative, statique (le client la compose entièrement).
+  drawFullPageDesign(doc, "page-4.png");
 
+  // Page 6 : synthèse des 7 forces de la personne.
   doc.addPage();
   await renderPage6(
     doc,
