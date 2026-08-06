@@ -25,11 +25,15 @@ export const forcePageSchema = z.enum(FORCE_PAGES);
 
 /// Construit la clé de stockage d'un visuel.
 ///
-/// La clé dépend uniquement du numéro de force et de la page — jamais du nom du
-/// fichier déposé. Le nommage d'origine du client est irrégulier (accents,
-/// espaces, casse, coquilles) et ne constitue pas un identifiant fiable.
-export function forceAssetKey(forceNumber: number, page: ForcePage): string {
-  return `forces/${forceNumber}/${page}.png`;
+/// La clé dépend de l'identifiant interne de la force, jamais de son numéro ni
+/// du nom du fichier déposé. Le numéro est une donnée métier que l'administrateur
+/// peut réattribuer depuis la médiathèque : s'il entrait dans la clé, chaque
+/// renumérotation obligerait à déplacer des objets dans le stockage, une
+/// opération qui ne peut pas être atomique avec l'écriture en base.
+///
+/// L'`id` étant un cuid immuable, renuméroter redevient un simple UPDATE.
+export function forceAssetKey(forceId: string, page: ForcePage): string {
+  return `forces/${forceId}/${page}.png`;
 }
 
 export type ImageValidationResult =

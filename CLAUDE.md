@@ -286,9 +286,18 @@ Configuration du bucket :
   `s3:ListBucket`) — jamais de clés admin dans l'application.
 
 Le nommage d'origine du client est irrégulier (accents, espaces, casse, `2` en suffixe de page B,
-au moins une coquille : `L'Intuituve optimiste`). **Ne jamais dériver la clé de stockage du nom de
-fichier uploadé** : la clé est construite à partir du numéro de force et de la page
-(`forces/{number}/{a|b}.png`), le nom d'origine n'est conservé que pour l'affichage.
+au moins une coquille : `L'Intuituve optimiste`). **Ne jamais dériver la clé de stockage d'une
+donnée que quelqu'un peut changer** — ni le nom du fichier uploadé, ni le numéro de force. La clé
+est construite à partir de l'`id` (cuid immuable) et de la page : `forces/{id}/{a|b}.png`. Le nom
+d'origine n'est conservé que pour l'affichage.
+
+Le numéro est entré dans cette catégorie quand la médiathèque a permis de le réattribuer : s'il
+figurait dans la clé, chaque renumérotation obligerait à déplacer des objets dans le stockage, une
+opération qui ne peut pas être atomique avec l'écriture en base. Avec l'`id`, renuméroter n'est
+qu'un `UPDATE`.
+
+Les routes de lecture (prévisualisation, générateur PDF) lisent **la clé enregistrée en base**, sans
+jamais la reconstruire : c'est la seule qui désigne à coup sûr l'objet déposé.
 
 Accès derrière `lib/storage/` (interface + adaptateur), pour que le métier ne dépende pas du
 fournisseur et que les tests puissent utiliser un adaptateur local.

@@ -42,3 +42,8 @@ next-env.d.ts
 
 /app/generated/prisma
 .storage/
+
+# livraisons du client (visuels des forces, ~300 Mo avec les .indd)
+# Les visuels vivent dans le stockage objet, jamais dans le dépôt.
+# Import : npx tsx scripts/import-forces.ts --apply
+livrable-png/

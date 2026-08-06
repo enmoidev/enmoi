@@ -44,7 +44,7 @@ export async function POST(req: Request, context: RouteContext) {
     const session = await getAuthSession();
     requireRole(session, ["ADMIN"]);
 
-    const { force, forceNumber, forcePage } = await resolveTarget(context);
+    const { force, forcePage } = await resolveTarget(context);
 
     const formData = await req.formData();
     const file = formData.get("file");
@@ -62,7 +62,7 @@ export async function POST(req: Request, context: RouteContext) {
       throw new BusinessError(validation.reason);
     }
 
-    const key = forceAssetKey(forceNumber, forcePage);
+    const key = forceAssetKey(force.id, forcePage);
     await getStorage().put(key, buffer, "image/png");
 
     const { keyColumn, filenameColumn } = assetColumns(forcePage);
@@ -85,11 +85,16 @@ export async function DELETE(_req: Request, context: RouteContext) {
     const session = await getAuthSession();
     requireRole(session, ["ADMIN"]);
 
-    const { force, forceNumber, forcePage } = await resolveTarget(context);
-
-    await getStorage().remove(forceAssetKey(forceNumber, forcePage));
+    const { force, forcePage } = await resolveTarget(context);
 
     const { keyColumn, filenameColumn } = assetColumns(forcePage);
+
+    // On supprime la clé réellement enregistrée plutôt que de la reconstruire :
+    // c'est la seule qui soit sûrement celle de l'objet déposé.
+    const storedKey = force[keyColumn];
+    if (storedKey) {
+      await getStorage().remove(storedKey);
+    }
     const updated = await prisma.force.update({
       where: { id: force.id },
       data: {

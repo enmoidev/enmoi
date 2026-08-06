@@ -4,7 +4,17 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { Check, ImageOff, Loader2, Pencil, Search, Trash2, Upload, X } from "lucide-react";
+import {
+  ArrowLeftRight,
+  Check,
+  ImageOff,
+  Loader2,
+  Pencil,
+  Search,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Progress } from "../ui/progress";
@@ -48,6 +58,8 @@ export default function DataManipulationForces() {
   const [editingNumber, setEditingNumber] = useState<number | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
   const [savingTitle, setSavingTitle] = useState(false);
+  /// Force dont on est en train de changer le numéro.
+  const [renumbering, setRenumbering] = useState<ForceType | null>(null);
 
   const loadForces = useCallback(async () => {
     try {
@@ -76,14 +88,34 @@ export default function DataManipulationForces() {
     });
   };
 
-  /// Remplace une force dans la liste et recalcule le compteur de complétude.
-  const applyUpdatedForce = (updated: ForceType) => {
+  /// Remplace une ou plusieurs forces dans la liste et recalcule le compteur.
+  ///
+  /// L'appariement se fait sur l'`id` et non sur le numéro : celui-ci change
+  /// lors d'un échange, il ne peut pas servir de repère.
+  const applyUpdatedForces = (updated: ForceType[]) => {
+    const byId = new Map(updated.map((force) => [force.id, force]));
     setForces((current) => {
-      const next = current.map((f) => (f.number === updated.number ? updated : f));
+      const next = current
+        .map((force) => byId.get(force.id) ?? force)
+        .sort((left, right) => left.number - right.number);
       const complete = next.filter(isForceComplete).length;
       setSummary({ total: next.length, complete, incomplete: next.length - complete });
       return next;
     });
+  };
+
+  const applyUpdatedForce = (updated: ForceType) => applyUpdatedForces([updated]);
+
+  const handleSwap = async (source: ForceType, target: number) => {
+    const res = await fetch(`/api/forces/${source.number}/swap`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ target }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? "Échange impossible.");
+
+    applyUpdatedForces(data.forces);
   };
 
   const handleUpload = async (forceNumber: number, page: ForcePage, file: File) => {
@@ -361,16 +393,27 @@ export default function DataManipulationForces() {
               >
                 <div className="flex min-w-0 flex-1 items-center gap-3">
                   {/* La pastille porte l'état de la ligne : turquoise si les deux
-                      pages sont là, ocre s'il en manque une. */}
-                  <span
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
+                      pages sont là, ocre s'il en manque une. Elle sert aussi de
+                      bouton pour réattribuer le numéro. */}
+                  <button
+                    type="button"
+                    onClick={() => setRenumbering(force)}
+                    aria-label={`Changer le numéro de la force ${force.number}, ${force.title}`}
+                    title="Changer le numéro"
+                    className={`group relative flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-sm font-semibold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] ${
                       complete
-                        ? "bg-brand-wash text-brand-deep"
-                        : "bg-ochre-wash text-ochre"
-                    }`}
+                        ? "bg-brand-wash text-brand-deep hover:bg-brand"
+                        : "bg-ochre-wash text-ochre hover:bg-ochre"
+                    } hover:text-white`}
                   >
-                    {force.number}
-                  </span>
+                    <span aria-hidden="true" className="group-hover:invisible">
+                      {force.number}
+                    </span>
+                    <ArrowLeftRight
+                      aria-hidden="true"
+                      className="invisible absolute h-4 w-4 group-hover:visible"
+                    />
+                  </button>
 
                   {editingNumber === force.number ? (
                     <span className="flex min-w-0 flex-1 items-center gap-1.5">
@@ -446,7 +489,110 @@ export default function DataManipulationForces() {
           })}
         </ul>
       )}
+
+      {renumbering && (
+        <RenumberDialog
+          force={renumbering}
+          forces={forces}
+          onClose={() => setRenumbering(null)}
+          onSwap={handleSwap}
+        />
+      )}
     </div>
+  );
+}
+
+type RenumberDialogProps = {
+  force: ForceType;
+  forces: ForceType[];
+  onClose: () => void;
+  onSwap: (source: ForceType, target: number) => Promise<void>;
+};
+
+/// Réattribue le numéro d'une force.
+///
+/// Les 100 numéros sont tous pris : l'opération est donc toujours un échange.
+/// Le dialogue nomme la force qui va recevoir l'ancien numéro, pour que
+/// l'administrateur voie qu'il déplace deux lignes et non une seule.
+function RenumberDialog({ force, forces, onClose, onSwap }: RenumberDialogProps) {
+  const [draft, setDraft] = useState(String(force.number));
+  const [saving, setSaving] = useState(false);
+
+  const target = Number(draft);
+  const isValid =
+    Number.isInteger(target) && target >= 1 && target <= forces.length && target !== force.number;
+  const occupant = isValid ? forces.find((f) => f.number === target) : undefined;
+
+  const submit = async () => {
+    if (!isValid || !occupant) return;
+    setSaving(true);
+    try {
+      await onSwap(force, target);
+      toast.success(
+        `Force ${force.number} « ${force.title} » ↔ force ${target} « ${occupant.title} ».`
+      );
+      onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Échange impossible.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && !saving && onClose()}>
+      <DialogContent showCloseButton={false} className="bg-paper max-w-md gap-4">
+        <DialogHeader>
+          <p className="eyebrow text-brand-deep">Changer le numéro</p>
+          <DialogTitle className="font-display text-ink text-xl">
+            {force.number}. {force.title}
+          </DialogTitle>
+        </DialogHeader>
+
+        <label className="block">
+          <span className="text-ink-muted text-[0.8125rem]">
+            Nouveau numéro (1 à {forces.length})
+          </span>
+          <Input
+            autoFocus
+            type="number"
+            min={1}
+            max={forces.length}
+            value={draft}
+            disabled={saving}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") submit();
+              if (e.key === "Escape" && !saving) onClose();
+            }}
+            className="bg-paper mt-1.5 h-10"
+          />
+        </label>
+
+        {/* L'échange n'est pas évident : on nomme explicitement la force qui
+            part à la place de celle-ci. */}
+        {occupant ? (
+          <p className="bg-ochre-wash text-ochre rounded-lg px-3 py-2.5 text-[0.8125rem]">
+            La force {target} «&nbsp;{occupant.title}&nbsp;» prendra le numéro {force.number}.
+          </p>
+        ) : (
+          <p className="text-ink-muted text-[0.8125rem]">
+            {draft.trim() === "" || target === force.number
+              ? "Saisissez un numéro différent de l’actuel."
+              : `Numéro invalide : attendu entre 1 et ${forces.length}.`}
+          </p>
+        )}
+
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" disabled={saving} onClick={onClose}>
+            Annuler
+          </Button>
+          <Button type="button" disabled={!isValid || saving} onClick={submit}>
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Échanger"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
