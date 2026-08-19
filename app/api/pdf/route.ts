@@ -1,15 +1,16 @@
-// Génération du PMI complet
+// Génération d'un livrable (freemium, livrable 1 ou livrable 2)
 
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { generatePdf } from "@/lib/generate-pdf/generatePdf";
+import { DELIVERABLES, DELIVERABLE_IDS } from "@/lib/generate-pdf/deliverables";
 import {
   buildBirthVariables,
   evaluateForceNumber,
   FormulaError,
 } from "@/lib/computeFunctions/computeFunctions";
-import { type PdfData, type PdfForce } from "@/types/pdf";
+import { type DeliverableId, type PdfData, type PdfForce } from "@/types/pdf";
 import { ROLE_COUNT, roleOverlayText } from "@/lib/forces/roles";
 import { getAuthSession } from "@/lib/auth-utils/getAuthSession";
 import { requireRole } from "@/lib/auth-utils/requireRole";
@@ -18,17 +19,25 @@ import { getStorage } from "@/lib/storage";
 
 export const runtime = "nodejs";
 
-// 14 visuels à lire puis à assembler : la durée par défaut de Vercel est trop
-// courte. À réévaluer avec les temps réellement mesurés en production.
+// Jusqu'à 14 visuels à lire sur S3 puis 35 pages à assembler : la durée par
+// défaut de Vercel est trop courte. À réévaluer avec les temps réellement
+// mesurés en production, le livrable 2 étant le plus lourd.
 export const maxDuration = 60;
 
 const requestSchema = z.object({
+  deliverable: z.enum(DELIVERABLE_IDS as [DeliverableId, ...DeliverableId[]]),
   firstName: z.string().trim().min(1, "Le prénom est obligatoire."),
   lastName: z.string().trim().min(1, "Le nom est obligatoire."),
   birthPlace: z.string().trim().min(1, "Le lieu de naissance est obligatoire."),
   birthDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "La date de naissance doit être au format AAAA-MM-JJ.")
+    .optional(),
+  // Imprimée sur la couverture quand elle est connue. Aucune formule ne s'en
+  // sert : elle sert à lever un doute humain sur la date, pas à être calculée.
+  birthTime: z
+    .string()
+    .regex(/^\d{2}:\d{2}$/, "L'heure de naissance doit être au format HH:MM.")
     .optional(),
   // Mode test : les 7 numéros de force sont choisis directement, au lieu d'être
   // calculés à partir de la date de naissance. Réservé au back-office pour valider
@@ -64,8 +73,17 @@ export async function POST(req: Request) {
     const session = await getAuthSession();
     requireRole(session, ["ADMIN"]);
 
-    const { firstName, lastName, birthPlace, birthDate, forceNumbers: chosenNumbers } =
-      requestSchema.parse(await req.json());
+    const {
+      deliverable: deliverableId,
+      firstName,
+      lastName,
+      birthPlace,
+      birthDate,
+      birthTime,
+      forceNumbers: chosenNumbers,
+    } = requestSchema.parse(await req.json());
+
+    const deliverable = DELIVERABLES[deliverableId];
 
     // Deux modes : soit les numéros sont fournis (test), soit ils sont calculés
     // à partir de la date de naissance.
@@ -99,8 +117,14 @@ export async function POST(req: Request) {
         );
       }
 
-      // Échec explicite plutôt qu'un PMI silencieusement incomplet.
-      if (!force.pageAKey || !force.pageBKey) {
+      // Les 7 forces sont toujours nommées — la roue de la page 3 les liste
+      // toutes — mais seules celles que le livrable développe ont besoin de
+      // leurs deux visuels. Le freemium n'en détaille qu'une : inutile de lire
+      // six fiches sur S3 pour les jeter ensuite.
+      const isDetailed = position <= deliverable.detailedForceCount;
+
+      if (isDetailed && (!force.pageAKey || !force.pageBKey)) {
+        // Échec explicite plutôt qu'un livrable silencieusement incomplet.
         const missing = !force.pageAKey ? "A" : "B";
         throw new BusinessError(
           `Le visuel de la page ${missing} manque pour la force n° ${forceNumber} ` +
@@ -108,33 +132,37 @@ export async function POST(req: Request) {
         );
       }
 
-      const [pageA, pageB] = await Promise.all([
-        storage.getBuffer(force.pageAKey),
-        storage.getBuffer(force.pageBKey),
-      ]);
+      const sheet =
+        isDetailed && force.pageAKey && force.pageBKey
+          ? await Promise.all([
+              storage.getBuffer(force.pageAKey),
+              storage.getBuffer(force.pageBKey),
+            ]).then(([pageA, pageB]) => ({ pageA, pageB }))
+          : undefined;
 
       pdfForces.push({
         number: force.number,
         title: force.title,
         position,
         symbolicRole: roleOverlayText(position),
-        pageA,
-        pageB,
+        sheet,
       });
     }
 
     const pdfData: PdfData = {
+      deliverable: deliverableId,
       firstName,
       lastName,
       birthPlace,
-      // En mode test, la date de naissance peut être absente : les pages
-      // d'introduction l'affichent alors vide, sans incidence sur les pages de force.
+      // En mode test, la date de naissance peut être absente : la couverture
+      // laisse alors le blanc vide, sans incidence sur le reste du document.
       birthDate: birthDate ?? "",
+      birthTime,
       forces: pdfForces,
     };
     const pdfBuffer = await generatePdf(pdfData);
 
-    const fileName = `PMI_${firstName}_${lastName}.pdf`.replace(/[^\w.-]/g, "_");
+    const fileName = `${deliverableId}_${firstName}_${lastName}.pdf`.replace(/[^\w.-]/g, "_");
 
     return new NextResponse(new Uint8Array(pdfBuffer), {
       headers: {

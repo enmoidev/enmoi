@@ -14,20 +14,6 @@ export function formatDateFR(dateString: string): string {
   return `${day}/${month}/${year}`;
 }
 
-export function fitTextToWidth(doc: PDFKit.PDFDocument,text: string,font: string,maxWidth: number,fontSize: number,minFontSize: number = 10): number {
-
-  let size = fontSize;
-  
-  doc.font(font).fontSize(size);
-
-  while (doc.widthOfString(text) > maxWidth && size > minFontSize) {
-    size -= 0.5; // réduit progressivement
-    doc.fontSize(size);
-  }
-
-  return size;
-}
-
 export function simplifyNameForDesign(fullName: string): string {
   const parts = fullName.trim().split(/\s+/);
   if (parts.length === 1) return fullName; // prénom seul

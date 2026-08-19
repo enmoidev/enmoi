@@ -9,8 +9,13 @@ export const ResetPasswordEmail = ({username,resetLink,}: BetterAuthResetPasswor
 
 	const previewText = `Réinitialiser votre mot de passe EnMoi`;
 	// Les clients de messagerie ne chargent ni polices ni composants : le logotype
-	// doit être une image servie en absolu depuis le site déployé.
-	const imageurl = `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL_PROD}/logo/logo-enmoi.png`;
+	// doit être une image servie en absolu depuis le site déployé. On retombe sur
+	// l'URL d'auth si la variable dédiée n'est pas renseignée, pour éviter un lien cassé.
+	const baseUrl =
+		process.env.NEXT_PUBLIC_BETTER_AUTH_URL_PROD ||
+		process.env.NEXT_PUBLIC_BETTER_AUTH_URL ||
+		"";
+	const imageurl = `${baseUrl}/logo/logo-enmoi.png`;
 
 	return (
 

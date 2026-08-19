@@ -12,20 +12,58 @@ Le principe métier :
 1. On part de la **date de naissance** d'une personne.
 2. **7 formules mathématiques** (paramétrables en base) calculent 7 nombres compris entre 1 et 100.
 3. Chacun de ces nombres désigne une **Force** (anciennement « aptitude ») parmi 100.
-4. On génère un **PDF livrable : le PMI** (Potentiel Mental Inné), composé de pages
-   d'introduction personnalisées puis de **2 pages par force** (14 pages de forces au total).
+4. On génère un **PDF livrable**, composé de pages d'introduction personnalisées, de
+   **2 pages par force** développée, puis de pages de méthode.
 
-Chaque force correspond à un **rôle symbolique** fixe, déterminé par sa position dans les 7 :
+Chaque force correspond à un **rôle symbolique** fixe, déterminé par sa position dans les 7.
+Les libellés sont ceux gravés par le client sur sa fiche explicative (page 6 des livrables) ;
+la source unique côté code est `lib/forces/roles.ts` :
 
-| Position | Rôle symbolique |
-|---|---|
-| 1 | Ta colonne vertébrale |
-| 2 | Ta boussole |
-| 3 | Ta destination |
-| 4 | Ton moteur |
-| 5 | Ta vitrine |
-| 6 | Ton énergie générationnelle |
-| 7 | Ton inspiratrice |
+| Position | Rôle symbolique | Ce qu'il désigne |
+|---|---|---|
+| 1 | Ma déterminante | Exprime mon caractère et ma détermination profonde |
+| 2 | Ma conseillère | Rappelle chaque jour ce qui est prioritaire pour moi |
+| 3 | Ma destination | Ma mission à accomplir |
+| 4 | Ma stimulante | Ma ressource quotidienne |
+| 5 | Ma relationnelle | Ma vitrine sociale, ma manière de m'adresser aux autres |
+| 6 | Ma générationnelle | Le partage commun à toute une génération |
+| 7 | Mon inspiratrice | La bonne étoile, ma boussole non-consciente |
+
+### Les trois livrables
+
+Le produit se décline en trois documents, qui partagent leurs six premières pages et se
+distinguent par le nombre de forces développées et par ce qui suit :
+
+| Livrable | Pages | Forces développées | Après les fiches |
+|---|---|---|---|
+| **Freemium** | 14 | 1 (position 1) | Introduction à la méthode des 3 étapes (p. 9-14) |
+| **Livrable 1** — Formule Découverte, Étape 1 | 21 | 7 | « Mon évolution » (p. 21) |
+| **Livrable 2** — Formule Complète, Méthode des 3 Étapes | 35 | 7 | Méthode complète et tableaux de travail (p. 21-35) |
+
+Les 7 forces sont **toujours** calculées et nommées, même en freemium : la roue de la page 3
+les liste toutes. Seul le nombre de fiches développées change — d'où un seul appel S3 pour le
+freemium au lieu de sept.
+
+La composition de chaque livrable est déclarée dans **`lib/generate-pdf/deliverables.ts`**, et
+nulle part ailleurs. Le générateur ne fait que dérouler ce manifeste.
+
+Structure commune (pagination du client) :
+
+| Page | Contenu | Surimpression |
+|---|---|---|
+| 1 | Couverture, propre au livrable | prénom, date et heure de naissance |
+| 2 | Page blanche (folio dans le livrable 2) | — |
+| 3 | Roue « Ma personnalité innée » | prénom au centre, les 7 titres dans les pastilles |
+| 4 | « Je découvre ma Personnalité Innée » | — |
+| 5 | Citation | prénom dans le bandeau ocre |
+| 6 | Fiche explicative — le rôle de chaque force | — |
+| 7… | 2 pages par force développée | A : prénom + position ; B : position + rôle |
+| 9 / 21 | Guide / auto-bilan (p. 9 en freemium, 21 en livrable 2) | prénom dans le bandeau ocre |
+
+Dans le livrable 2, trois tableaux de travail reçoivent aussi les 7 titres de force :
+pages 27 (tableaux 1 & 2), 34 (tableau 3) et 35 (tableau 4). Leurs champs « Mon Prénom » et
+« Date » restent **volontairement vides** : ce sont des lignes que la personne remplit à la main.
+La colonne des forces est la seule qu'elle ne peut pas deviner, donc la seule pré-remplie.
 
 ### Changement majeur sur le PDF
 
@@ -44,18 +82,36 @@ la force, tout le texte rédactionnel, la mention « Étape 1 » et le « (tsvp)
 
 #### Ce qu'il faut surimprimer
 
-Trois valeurs seulement, sur les zones laissées vides à dessein dans les gabarits :
+Quatre valeurs seulement, sur les zones laissées vides à dessein dans les gabarits :
 
 | Page | Emplacement dans l'image | Valeur |
 |---|---|---|
 | A | bandeau turquoise, **en haut à gauche** (le logo est centré, « Étape 1 » à droite) | le **prénom** de la personne |
+| A | **bas de page, centré**, ligne de base à 25 mm du bord | la **position 1 à 7**, en très grand |
 | B | `Force ___ /7 :` — blanc entre « Force » et « /7 » | la **position 1 à 7** |
 | B | `Son rôle :` — blanc à droite du libellé | le **rôle symbolique** de la position |
 
 ⚠️ Le chiffre imprimé est la **position dans les 7**, jamais le numéro de la force (1-100). Ce
-numéro n'apparaît nulle part sur les pages livrées ; il ne sert qu'à choisir le bon PNG.
+numéro n'apparaît nulle part sur les pages livrées ; il ne sert qu'à choisir le bon PNG. Le
+fichier d'exemple du client montre bien la même fiche déclinée avec les 7 chiffres possibles.
 
 Le prénom en page A est sur fond turquoise : texte **blanc**, comme les autres éléments du bandeau.
+Il ne figure **que sur la page A** : la page B reprend le même bandeau, mais le répéter à une page
+d'intervalle est redondant.
+
+#### Typographie imposée (note client du 05/08/2026)
+
+| Où | Police | Taille | Couleur |
+|---|---|---|---|
+| Fiche, recto — prénom | Gabriola Regular | 23 | blanc |
+| Fiche, recto — grand chiffre | Book Antiqua Regular | 105 | gris `CCCCCC` |
+| Fiche, verso — chiffre | Segoe UI SemiBold | 13 | blanc |
+| Fiche, verso — rôle | Georgia Bold | 10,5 | blanc |
+| Couverture — prénom | Cabin SemiBold | 20 | blanc |
+| Couverture — naissance | Cabin Medium | 14 | blanc |
+| Page 3 — prénom | Gabriola Regular | 19 | noir |
+| Page 3 — titres de force | Cabin Bold | 10 | noir |
+| Pages 5 et 9/21 — prénom | Gabriola Regular | 19 | noir |
 
 Toutes les coordonnées vivent dans **`lib/generate-pdf/overlayLayout.ts`**, et nulle part ailleurs.
 Elles sont exprimées en **pixels du visuel source** (2480 × 3508), donc relevables directement dans
@@ -65,8 +121,21 @@ gabarit, on ajuste une constante de ce fichier et rien d'autre.
 Chaque zone porte un `minFontSizePt` : la police est réduite automatiquement pour les prénoms longs
 et les rôles qui déborderaient de l'espace prévu.
 
-Méthode de calage : composer le texte sur le PNG source avec `sharp` aux mêmes coordonnées et
-vérifier visuellement, plutôt que de deviner à l'aveugle.
+Un `TextBox` porte aussi un `anchor` : `top` (bord haut de la ligne, défaut de pdfkit) ou
+`baseline` (ligne de base). Les deux coexistent volontairement — les fiches de forces ont été
+calées en `top` et validées ainsi, les pages d'introduction ont été relevées dans les PDF du
+client, qui donnent des lignes de base.
+
+Méthode de calage : générer un aperçu, le rastériser, et comparer au PDF de référence du client
+au même cadrage :
+
+```bash
+npx tsx scripts/preview-livrable.ts freemium apercu.pdf
+```
+
+Le script fabrique un document complet avec des données factices, sans base ni S3 — les fiches de
+forces y sont des pages blanches, leur calage étant déjà validé. Deviner des coordonnées à
+l'aveugle ne marche pas ; les relever puis vérifier à l'œil, si.
 
 ## Périmètre et priorités
 
@@ -119,8 +188,15 @@ lib/
   computeFunctions/           évaluateur d'expressions + variables de naissance
   forces/forceAssets.ts       clés de stockage et validation des PNG
   storage/                    interface ObjectStorage + adaptateurs S3 / local
-  generate-pdf/               assemblage du PMI
+  generate-pdf/               assemblage des livrables
+    deliverables.ts           ⭐ composition des 3 livrables, page par page
     overlayLayout.ts          ⭐ toutes les coordonnées de surimpression
+    generatePdf.ts            déroule le manifeste
+    renderOverlays.ts         surimpressions des pages d'introduction et des tableaux
+    renderForcePages.ts       les 2 pages d'une fiche de force
+    drawText.ts               primitives partagées (texte ajusté, image, masque)
+    designAssets.ts           lecture et cache des gabarits
+    fonts.ts                  enregistrement des polices
   prisma.ts                   singleton PrismaClient
 components/
   dataManipulation/           écrans CRUD du back-office
@@ -128,11 +204,18 @@ components/
   ui/                         shadcn
 prisma/
   schema.prisma, migrations/, seed.ts, seed-forces.ts, seed-mathfunctions.ts
+scripts/
+  preview-livrable.ts         aperçu d'un livrable, sans base ni S3
 public/
-  fonts/                      AktivGrotesk (7 graisses), Philosopher-Bold, Rosalia
-  pdf-design/                 gabarits PNG des pages d'introduction du PDF
-  forces/                     échantillon de travail (10 forces) — non déployé
+  fonts/                      Gabriola, Georgia, Book Antiqua, Segoe UI SemiBold, Cabin ×4
+  pdf-design/                 gabarits PNG des livrables
+    commun/                   pages 3 à 6, identiques aux trois documents
+    freemium/, livrable1/, livrable2/   couverture + pages propres au livrable
+    hors-livrable/            visuels du client rattachés à aucune page (3 schémas)
 ```
+
+Les gabarits de `pdf-design/` sont **versionnés** — contrairement aux visuels de forces, déposés
+par le client et stockés sur S3. Ils pèsent ~11 Mo au total.
 
 ### Gestion des erreurs d'API
 
@@ -200,11 +283,31 @@ d'un PMI échoue volontairement.
 
 ## État actuel et dettes connues
 
-La refonte est en cours sur la branche `refonte-enmoi`. Phases 0 à 3 terminées
-(assainissement, modèle `Force`, stockage S3 + médiathèque, générateur PMI v2).
+La refonte est en cours sur la branche `refonte-enmoi`. Phases 0 à 4 terminées
+(assainissement, modèle `Force`, stockage S3 + médiathèque, générateur v2, puis les trois
+livrables).
 
 Dettes restantes :
 
+- ⚠️ **Le gabarit `livrable2/34-tableau-3.png` n'est pas vierge.** L'export du client — y compris
+  son PDF « Vierge » — contient encore l'exemple de sa maquette : « LA CRÉATIVE AUDACIEUSE » en
+  première ligne, et un « 10 » pré-rempli dans les **sept cases de la colonne Étape 1**. Le titre
+  de la première ligne est neutralisé par un masque déclaré dans `WORKSHEET_EVALUATION.masks`,
+  mais **les sept « 10 » restent imprimés** : ce sont des réponses d'exemple qui n'ont rien à
+  faire dans le document d'une cliente. Les effacer supposerait de redessiner les cases —
+  **redemander un export propre au client**, puis supprimer le masque.
+- ⚠️ **Licence des polices.** Gabriola, Georgia, Book Antiqua et Segoe UI sont des polices
+  Microsoft / Monotype. Leur licence ne couvre ni la redistribution dans une application web ni
+  l'incorporation dans un PDF diffusé commercialement — or pdfkit les incorpore dans chaque
+  document. Le client les a imposées et trois d'entre elles étaient déjà en place avant cette
+  passe. À régler avant la mise en production : acquérir les licences, ou passer à des substituts
+  libres visuellement proches. Cabin est sous OFL, aucune restriction.
+- **3 schémas sans page d'accueil** : `hors-livrable/schema-*.png` (l'épanouissement, les 7 forces
+  version turquoise, les 100 forces) ont été livrés mais ne correspondent à aucune page des trois
+  documents. À rattacher, ou destinés au site vitrine — question à poser au client.
+- **Poids des documents** : le livrable 2 fait ~5 Mo sans les fiches de forces, ~10 Mo avec.
+  Les gabarits sont des PNG plein format ; une conversion en palette réduirait fortement le poids
+  sur les pages en aplats, à condition de vérifier les pages illustrées.
 - **Next 15.5.3 → 16.x** : une RCE critique est corrigée en 16. Migration majeure à traiter dans
   une passe dédiée avant la mise en production.
 - **Prisma 6 → 7** : l'extension VS Code signale déjà que `url` dans `datasource` disparaît en v7
@@ -219,9 +322,9 @@ Dettes restantes :
 - **`PASSWORD_ADMIN`** est un mot de passe réel en clair dans `.env` : à faire tourner avant la
   production.
 
-⚠️ **Le temps de génération du PMI est à mesurer en production.** Localement : ~7 s pour 16 pages
-et 7 Mo, sans les 14 lectures S3 qui s'y ajouteront. `maxDuration` est fixé à 60 s dans
-`app/api/pdf/route.ts`. Si la marge se révèle trop courte, basculer sur une génération asynchrone.
+⚠️ **Le temps de génération est à mesurer en production.** Le livrable 2 est le cas le plus lourd :
+35 pages et 14 lectures S3. `maxDuration` est fixé à 60 s dans `app/api/pdf/route.ts`. Si la marge
+se révèle trop courte, basculer sur une génération asynchrone.
 
 ## Modèle Force (migration faite)
 
@@ -353,6 +456,9 @@ npm run migrate:postgres                      # applique les migrations en prod 
 
 npx tsx prisma/seed-mathfunctions.ts          # seed des 7 formules (idempotent)
 npx tsx prisma/seed.ts                        # seed du compte admin
+
+# aperçu d'un livrable avec des données factices, sans base ni S3 — sert au calage
+npx tsx scripts/preview-livrable.ts freemium|livrable1|livrable2 [sortie.pdf]
 ```
 
 ## Environnement

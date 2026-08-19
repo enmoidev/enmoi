@@ -12,6 +12,8 @@ import { Label } from "../ui/label";
 import { forceRoles } from "@/components/admin/forceRoles";
 import type { ForceType } from "@/types/modelPrisma";
 import { isForceComplete } from "@/types/modelPrisma";
+import { DELIVERABLES, DELIVERABLE_IDS, pageCount } from "@/lib/generate-pdf/deliverables";
+import type { DeliverableId } from "@/types/pdf";
 
 /// Deux façons de choisir les 7 forces : par la date de naissance (réel) ou en
 /// les désignant à la main (test, pour valider l'assemblage sans les formules).
@@ -20,10 +22,13 @@ type Mode = "birthDate" | "manual";
 export default function DataManipulationPMI() {
 
   const [mode, setMode] = useState<Mode>("birthDate");
+  const [deliverable, setDeliverable] = useState<DeliverableId>("livrable2");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [birthPlace, setBirthPlace] = useState("");
   const [birthDate, setBirthDate] = useState<Date | null>(null);
+  // Heure « HH:MM », facultative : le client la note « si connue ».
+  const [birthTime, setBirthTime] = useState("");
   // Numéro de force choisi pour chacune des 7 positions (mode test).
   const [chosenForces, setChosenForces] = useState<(number | null)[]>(
     () => Array(7).fill(null)
@@ -80,20 +85,18 @@ export default function DataManipulationPMI() {
       setApiError(null);
       setLastFileName(null);
 
+      const identity = {
+        deliverable,
+        firstName,
+        lastName,
+        birthPlace,
+        ...(birthTime ? { birthTime } : {}),
+      };
+
       const body =
         mode === "manual"
-          ? {
-              firstName,
-              lastName,
-              birthPlace,
-              forceNumbers: chosenForces as number[],
-            }
-          : {
-              firstName,
-              lastName,
-              birthPlace,
-              birthDate: birthDate!.toISOString().split("T")[0],
-            };
+          ? { ...identity, forceNumbers: chosenForces as number[] }
+          : { ...identity, birthDate: birthDate!.toISOString().split("T")[0] };
 
       const res = await fetch("/api/pdf", {
         method: "POST",
@@ -111,7 +114,7 @@ export default function DataManipulationPMI() {
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
-      const fileName = `livrable_${firstName}_${lastName}.pdf`;
+      const fileName = `${deliverable}_${firstName}_${lastName}.pdf`;
       link.href = url;
       link.download = fileName;
       link.click();
@@ -148,6 +151,32 @@ export default function DataManipulationPMI() {
           Le prénom est surimprimé sur chaque page du document. Les 7 forces sont
           déterminées par la date de naissance, ou choisies à la main pour un test.
         </p>
+
+        {/* Choix du livrable : c'est lui qui fixe la composition du document. */}
+        <div className="mt-5">
+          <Label htmlFor="pmi-deliverable" className="pb-2">
+            Livrable
+          </Label>
+          <select
+            id="pmi-deliverable"
+            className="border-input bg-paper h-9 w-full rounded-md border px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+            value={deliverable}
+            onChange={(e) => setDeliverable(e.target.value as DeliverableId)}
+          >
+            {DELIVERABLE_IDS.map((id) => (
+              <option key={id} value={id}>
+                {DELIVERABLES[id].label}
+              </option>
+            ))}
+          </select>
+          <p className="text-ink-muted mt-1.5 text-[0.8125rem]">
+            {pageCount(DELIVERABLES[deliverable])} pages,{" "}
+            {DELIVERABLES[deliverable].detailedForceCount === 1
+              ? "1 seule force développée"
+              : "les 7 forces développées"}
+            . Les 7 sont nommées sur la roue dans tous les cas.
+          </p>
+        </div>
 
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
@@ -189,6 +218,23 @@ export default function DataManipulationPMI() {
               value={birthPlace}
               onChange={(e) => setBirthPlace(e.target.value)}
             />
+          </div>
+
+          <div>
+            <Label htmlFor="pmi-birth-time" className="pb-2">
+              Heure de naissance{" "}
+              <span className="text-ink-muted font-normal">(facultative)</span>
+            </Label>
+            <Input
+              id="pmi-birth-time"
+              type="time"
+              className="bg-paper"
+              value={birthTime}
+              onChange={(e) => setBirthTime(e.target.value)}
+            />
+            <p className="text-ink-muted mt-1.5 text-[0.8125rem]">
+              Imprimée sur la couverture. N&apos;entre dans aucune formule.
+            </p>
           </div>
         </div>
 
@@ -290,7 +336,8 @@ export default function DataManipulationPMI() {
             )}
           </Button>
           <p className="text-ink-muted text-[0.8125rem]">
-            Le document fait une quinzaine de pages : comptez quelques secondes.
+            Le document fait {pageCount(DELIVERABLES[deliverable])} pages : comptez
+            quelques secondes.
           </p>
         </div>
 
@@ -336,8 +383,11 @@ export default function DataManipulationPMI() {
           Ce que contient le document
         </h2>
         <p className="text-ink-muted mt-2 text-sm">
-          Les pages d&apos;introduction, puis deux pages par force, dans l&apos;ordre
-          des 7 positions.
+          {DELIVERABLES[deliverable].before.length} pages d&apos;introduction, puis
+          deux pages par force développée, puis{" "}
+          {DELIVERABLES[deliverable].after.length} pages de méthode.
+          {DELIVERABLES[deliverable].detailedForceCount === 1 &&
+            " Seule la force en position 1 est développée."}
         </p>
 
         <ol className="mt-4">

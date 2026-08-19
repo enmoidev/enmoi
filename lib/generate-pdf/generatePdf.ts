@@ -1,14 +1,24 @@
-// Assemblage du livrable : pages d'introduction puis 2 pages par force
+// Assemblage d'un livrable : le manifeste déroulé page à page
 
 import PDFDocument from "pdfkit";
-import { PdfData } from "@/types/pdf";
+import type { PdfData } from "@/types/pdf";
 import { DEFAULT_FONT_PATH, registerFonts } from "./fonts";
+import { DELIVERABLES, type DeliverablePage } from "./deliverables";
 import { drawFullPageDesign } from "./designAssets";
+import { applyOverlay } from "./renderOverlays";
 import { renderForcePages } from "./renderForcePages";
-import { renderPage6 } from "./page6";
 
 export async function generatePdf(data: PdfData): Promise<Buffer> {
-  const doc = new PDFDocument({ size: "A4", font: DEFAULT_FONT_PATH, margin: 0 });
+  const deliverable = DELIVERABLES[data.deliverable];
+
+  // `autoFirstPage: false` : chaque page est ajoutée explicitement par le
+  // parcours du manifeste, sinon le document s'ouvre sur une page vide.
+  const doc = new PDFDocument({
+    size: "A4",
+    font: DEFAULT_FONT_PATH,
+    margin: 0,
+    autoFirstPage: false,
+  });
   registerFonts(doc);
 
   const chunks: Buffer[] = [];
@@ -18,24 +28,30 @@ export async function generatePdf(data: PdfData): Promise<Buffer> {
     doc.on("error", reject);
   });
 
-  // --- Pages d'introduction ---
-  // Page 4 : fiche explicative, statique (le client la compose entièrement).
-  drawFullPageDesign(doc, "page-4.png");
-
-  // Page 6 : synthèse des 7 forces de la personne.
-  doc.addPage();
-  await renderPage6(
-    doc,
-    data.firstName,
-    data.lastName,
-    data.forces.map((force) => force.title)
-  );
-
-  // --- 2 pages par force ---
-  for (const force of data.forces) {
+  const drawPage = (page: DeliverablePage) => {
     doc.addPage();
-    renderForcePages(doc, force, data.firstName);
+    drawFullPageDesign(doc, page.asset);
+    if (page.overlay) applyOverlay(doc, page.overlay, data);
+  };
+
+  deliverable.before.forEach(drawPage);
+
+  // Les fiches développées sont les premières positions : le freemium n'en
+  // montre qu'une, les livrables 1 et 2 les sept.
+  for (const force of data.forces.slice(0, deliverable.detailedForceCount)) {
+    if (!force.sheet) {
+      // L'appelant garantit les visuels des forces développées. Si l'invariant
+      // casse, mieux vaut s'arrêter que produire un livrable amputé sans le dire.
+      throw new Error(
+        `Les visuels de la force n° ${force.number} (« ${force.title} »), en ` +
+          `position ${force.position}, n'ont pas été chargés.`
+      );
+    }
+    doc.addPage();
+    renderForcePages(doc, { ...force, sheet: force.sheet }, data.firstName);
   }
+
+  deliverable.after.forEach(drawPage);
 
   doc.end();
   return finished;
