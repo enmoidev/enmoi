@@ -14,8 +14,23 @@ export const TOTAL_FORCES = 100;
 export const FIRST_FORCE_NUMBER = 0;
 export const LAST_FORCE_NUMBER = FIRST_FORCE_NUMBER + TOTAL_FORCES - 1;
 
-/// « 0 et 99 » — pour les messages destinés à l'administrateur.
-export const FORCE_NUMBER_RANGE = `${FIRST_FORCE_NUMBER} et ${LAST_FORCE_NUMBER}`;
+/// « 00 et 99 » — pour les messages destinés à l'administrateur.
+export const FORCE_NUMBER_RANGE = `${formatForceNumber(FIRST_FORCE_NUMBER)} et ${formatForceNumber(
+  LAST_FORCE_NUMBER
+)}`;
+
+/// Numéro de force tel qu'il s'affiche.
+///
+/// Seule la première force s'écrit « 00 » — le client tient à ce double zéro.
+/// Toutes les autres gardent leur écriture naturelle : 1, 2, … 99, sans zéro
+/// de tête.
+///
+/// Uniquement pour l'affichage : la valeur reste un entier en base, dans les URL
+/// d'API et dans les formules. Ne jamais s'en servir pour construire une clé de
+/// stockage ni une requête.
+export function formatForceNumber(number: number): string {
+  return number === FIRST_FORCE_NUMBER ? "00" : String(number);
+}
 
 /// Dimensions attendues : A4 à 300 DPI, format des gabarits fournis par le client.
 export const EXPECTED_WIDTH_PX = 2480;

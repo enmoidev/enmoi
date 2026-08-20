@@ -7,7 +7,7 @@ interface BetterAuthResetPasswordEmailProps {
 
 export const ResetPasswordEmail = ({username,resetLink,}: BetterAuthResetPasswordEmailProps) => {
 
-	const previewText = `Réinitialiser votre mot de passe EnMoi`;
+	const previewText = `Réinitialiser votre mot de passe enMOI`;
 	// Les clients de messagerie ne chargent ni polices ni composants : le logotype
 	// doit être une image servie en absolu depuis le site déployé. On retombe sur
 	// l'URL d'auth si la variable dédiée n'est pas renseignée, pour éviter un lien cassé.
@@ -31,10 +31,10 @@ export const ResetPasswordEmail = ({username,resetLink,}: BetterAuthResetPasswor
 
 					<Container className="border border-solid border-[#eaeaea] rounded my-[40px] mx-auto p-[20px] max-w-[465px]">
 
-						<Img src={imageurl} alt="EnMoi" width="150" height="auto" className="mx-auto my-[20px] rounded"/>
+						<Img src={imageurl} alt="enMOI" width="150" height="auto" className="mx-auto my-[20px] rounded"/>
 
 						<Heading className="text-black text-[24px] font-normal text-center p-0 my-[30px] mx-0">
-							Réinitialisez votre <strong>mot de passe</strong> sur l&apos;application EnMoi.
+							Réinitialisez votre <strong>mot de passe</strong> sur l&apos;application enMOI.
 						</Heading>
 
 						<Text className="text-black text-[14px] leading-[24px]">
@@ -42,7 +42,7 @@ export const ResetPasswordEmail = ({username,resetLink,}: BetterAuthResetPasswor
 						</Text>
 
 						<Text className="text-black text-[14px] leading-[24px]">
-							Nous avons reçu une demande de réinitialisation du mot de passe de votre compte EnMoi. Si vous n&apos;êtes pas à l&apos;origine de cette demande, vous pouvez ignorer cet e-mail en toute sécurité.
+							Nous avons reçu une demande de réinitialisation du mot de passe de votre compte enMOI. Si vous n&apos;êtes pas à l&apos;origine de cette demande, vous pouvez ignorer cet e-mail en toute sécurité.
 						</Text>
 
 						<Section className="text-center mt-[32px] mb-[32px]">

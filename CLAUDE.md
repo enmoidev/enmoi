@@ -1,11 +1,11 @@
-# EnMoi — Application web
+# enMOI — Application web
 
-> Anciennement **inYou**. La marque est désormais **EnMoi**. Le code, les assets et la
+> Anciennement **inYou**. La marque est désormais **enMOI**. Le code, les assets et la
 > nomenclature portent encore l'ancien nom à de nombreux endroits : voir « Renommage » plus bas.
 
 ## Le produit
 
-EnMoi est une solution de développement personnel fondée sur l'**inné** et l'**acquis**.
+enMOI est une solution de développement personnel fondée sur l'**inné** et l'**acquis**.
 
 Le principe métier :
 
@@ -145,7 +145,7 @@ L'application finale regroupe trois parties. Ordre de travail décidé avec le c
 |---|---|---|
 | **Back-office admin** | `/admin/*` | **Actuelle** — tout est à retravailler, fonctionnel et UI/UX |
 | Accueil minimal | `/` | **Actuelle** — page simple + bouton « Se connecter / Créer un compte » en haut à droite, uniquement pour accéder au back-office |
-| Site vitrine (présentation EnMoi…) | `/` et pages publiques | Plus tard |
+| Site vitrine (présentation enMOI…) | `/` et pages publiques | Plus tard |
 | Espace utilisateur | `/account/*` | Plus tard |
 
 L'accueil n'est **pas** le site vitrine pour l'instant : c'est une porte d'entrée sobre vers
@@ -430,7 +430,7 @@ image, et une génération de PDF dépendante de la disponibilité du site.
 
 Seuls les **visuels de forces** viennent de S3, puisqu'ils sont déposés par le client.
 
-## Renommage inYou → EnMoi
+## Renommage inYou → enMOI
 
 Périmètre retenu pour l'instant : **UI, metadata et assets uniquement**. On **ne renomme pas**
 le dossier `inyou-app`, le champ `name` de `package.json`, le dépôt git ni la base Neon — ce sont
@@ -441,6 +441,10 @@ des chantiers annexes qui cassent les chemins locaux, à faire plus tard en une 
 
 ## Conventions de code
 
+- La marque s'écrit **`enMOI`** — « en » en minuscules, « MOI » en capitales — partout où elle est
+  lue par quelqu'un : textes d'interface, `metadata`, e-mails, `alt` d'images. Jamais « EnMoi »
+  ni « Enmoi ». Les identifiants techniques déjà en place gardent leur casse (`--enmoi-ink`,
+  `font-sans-enmoi`, branche `refonte-enmoi`) : ils ne s'affichent nulle part.
 - Commentaires et libellés d'interface **en français** ; identifiants en anglais.
 - Un commentaire d'en-tête d'une ligne en tête de fichier décrivant son rôle (convention déjà
   en place dans le projet).
@@ -449,7 +453,7 @@ des chantiers annexes qui cassent les chemins locaux, à faire plus tard en une 
 - Les composants `components/ui/` viennent de shadcn — les régénérer via le CLI plutôt que les
   écrire à la main.
 - Couleur de marque actuelle : `#28939f` (variables `--primary`, `--foreground` dans `globals.css`).
-  À revalider lors de la refonte UI/UX EnMoi.
+  À revalider lors de la refonte UI/UX enMOI.
 
 ## Commandes
 

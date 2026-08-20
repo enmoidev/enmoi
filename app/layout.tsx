@@ -1,4 +1,4 @@
-// Layout racine de l'application EnMoi
+// Layout racine de l'application enMOI
 
 import type { Metadata } from "next";
 import localFont from "next/font/local";
@@ -43,13 +43,13 @@ const gabriola = localFont({
 
 export const metadata: Metadata = {
   title: {
-    default: "EnMoi — Révèle tes forces mentales innées",
-    template: "%s | EnMoi",
+    default: "enMOI — Révèle tes forces mentales innées",
+    template: "%s | enMOI",
   },
   description:
-    "EnMoi accompagne le développement personnel à partir de l'inné et de l'acquis, et révèle les 7 forces mentales dans un livrable personnel.",
-  applicationName: "EnMoi",
-  authors: [{ name: "EnMoi" }],
+    "enMOI accompagne le développement personnel à partir de l'inné et de l'acquis, et révèle les 7 forces mentales dans un livrable personnel.",
+  applicationName: "enMOI",
+  authors: [{ name: "enMOI" }],
   // Aucun contenu public n'est encore publié : on n'indexe rien tant que le site
   // vitrine n'est pas en ligne. À rouvrir le jour où la vitrine arrive.
   robots: {

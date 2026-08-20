@@ -11,7 +11,6 @@ import {
   Loader2,
   Pencil,
   Search,
-  Trash2,
   Upload,
   X,
 } from "lucide-react";
@@ -19,10 +18,10 @@ import {
   FIRST_FORCE_NUMBER,
   FORCE_NUMBER_RANGE,
   LAST_FORCE_NUMBER,
+  formatForceNumber,
 } from "@/lib/forces/forceAssets";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { Progress } from "../ui/progress";
 import { Skeleton } from "../ui/skeleton";
 import {
   Dialog,
@@ -35,9 +34,6 @@ import type { ForceType } from "@/types/modelPrisma";
 import { isForceComplete } from "@/types/modelPrisma";
 
 type ForcePage = "a" | "b";
-type Filter = "toutes" | "completes" | "incompletes";
-
-type Summary = { total: number; complete: number; incomplete: number };
 
 /// Identifie l'opération en cours pour n'afficher le spinner que sur la bonne case.
 type PendingKey = `${number}-${ForcePage}`;
@@ -52,11 +48,9 @@ function pngFilesFrom(list: FileList | null): File[] {
 
 export default function DataManipulationForces() {
   const [forces, setForces] = useState<ForceType[]>([]);
-  const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState<Set<PendingKey>>(new Set());
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<Filter>("toutes");
   /// Numéro de la force actuellement survolée par un glisser-déposer.
   const [dropTarget, setDropTarget] = useState<number | null>(null);
   /// Numéro de la force dont le titre est en cours d'édition, et sa saisie.
@@ -72,7 +66,6 @@ export default function DataManipulationForces() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Chargement impossible.");
       setForces(data.forces);
-      setSummary(data.summary);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Chargement impossible.");
     } finally {
@@ -93,20 +86,17 @@ export default function DataManipulationForces() {
     });
   };
 
-  /// Remplace une ou plusieurs forces dans la liste et recalcule le compteur.
+  /// Remplace une ou plusieurs forces dans la liste.
   ///
   /// L'appariement se fait sur l'`id` et non sur le numéro : celui-ci change
   /// lors d'un échange, il ne peut pas servir de repère.
   const applyUpdatedForces = (updated: ForceType[]) => {
     const byId = new Map(updated.map((force) => [force.id, force]));
-    setForces((current) => {
-      const next = current
+    setForces((current) =>
+      current
         .map((force) => byId.get(force.id) ?? force)
-        .sort((left, right) => left.number - right.number);
-      const complete = next.filter(isForceComplete).length;
-      setSummary({ total: next.length, complete, incomplete: next.length - complete });
-      return next;
-    });
+        .sort((left, right) => left.number - right.number)
+    );
   };
 
   const applyUpdatedForce = (updated: ForceType) => applyUpdatedForces([updated]);
@@ -139,7 +129,7 @@ export default function DataManipulationForces() {
       if (!res.ok) throw new Error(data.error ?? "Dépôt impossible.");
 
       applyUpdatedForce(data.force);
-      toast.success(`Page ${page.toUpperCase()} de la force ${forceNumber} déposée.`);
+      toast.success(`Page ${page.toUpperCase()} de la force ${formatForceNumber(forceNumber)} déposée.`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Dépôt impossible.");
     } finally {
@@ -176,31 +166,11 @@ export default function DataManipulationForces() {
 
       applyUpdatedForce(data.force);
       cancelEditing();
-      toast.success(`Titre de la force ${forceNumber} mis à jour.`);
+      toast.success(`Titre de la force ${formatForceNumber(forceNumber)} mis à jour.`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Renommage impossible.");
     } finally {
       setSavingTitle(false);
-    }
-  };
-
-  const handleDelete = async (forceNumber: number, page: ForcePage) => {
-    const key: PendingKey = `${forceNumber}-${page}`;
-    setPendingFor(key, true);
-
-    try {
-      const res = await fetch(`/api/forces/${forceNumber}/${page}`, {
-        method: "DELETE",
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Suppression impossible.");
-
-      applyUpdatedForce(data.force);
-      toast.success(`Page ${page.toUpperCase()} de la force ${forceNumber} retirée.`);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Suppression impossible.");
-    } finally {
-      setPendingFor(key, false);
     }
   };
 
@@ -222,145 +192,56 @@ export default function DataManipulationForces() {
     handleUpload(force.number, "b", files[1]);
 
     if (files.length > 2) {
-      toast(`Force ${force.number} : seuls les 2 premiers fichiers ont été retenus.`);
+      toast(`Force ${formatForceNumber(force.number)} : seuls les 2 premiers fichiers ont été retenus.`);
     }
   };
 
   const visibleForces = useMemo(() => {
     const needle = search.trim().toLowerCase();
     return forces.filter((force) => {
-      const complete = isForceComplete(force);
-      if (filter === "completes" && !complete) return false;
-      if (filter === "incompletes" && complete) return false;
       if (!needle) return true;
+      // La première force s'affiche « 00 » : on accepte les deux écritures,
+      // « 0 » comme « 00 », sans quoi la recherche démentirait ce qui est à l'écran.
       return (
         force.title.toLowerCase().includes(needle) ||
-        String(force.number) === needle
+        String(force.number) === needle ||
+        formatForceNumber(force.number) === needle
       );
     });
-  }, [forces, search, filter]);
+  }, [forces, search]);
 
   if (loading) {
     return (
       <div className="space-y-4" aria-busy="true" aria-live="polite">
         <span className="sr-only">Chargement des forces…</span>
-        <Skeleton className="h-28 w-full rounded-xl" />
-        {Array.from({ length: 6 }).map((_, index) => (
+        <Skeleton className="h-11 w-full rounded-lg" />
+        {Array.from({ length: 8 }).map((_, index) => (
           <Skeleton key={index} className="h-16 w-full rounded-lg" />
         ))}
       </div>
     );
   }
 
-  const percent = summary && summary.total > 0
-    ? Math.round((summary.complete / summary.total) * 100)
-    : 0;
-
-  const filterOptions: { value: Filter; label: string; count?: number }[] = [
-    { value: "toutes", label: "Toutes", count: summary?.total },
-    { value: "incompletes", label: "À compléter", count: summary?.incomplete },
-    { value: "completes", label: "Complètes", count: summary?.complete },
-  ];
-
   return (
     <div className="space-y-5">
-      {summary && (
-        <section
-          aria-label="Avancement du dépôt"
-          className="border-line bg-paper shadow-sheet rounded-xl border p-5 md:p-6"
-        >
-          <div className="flex flex-wrap items-end justify-between gap-6">
-            <div className="editorial-rule pl-4">
-              <p className="eyebrow text-brand-deep">Avancement</p>
-              <p className="mt-2 flex items-baseline gap-2">
-                <span className="font-display text-ink text-[2.75rem] leading-none">
-                  {summary.complete}
-                </span>
-                <span className="text-ink-muted text-lg">/ {summary.total}</span>
-                <span className="text-ink-muted text-[0.9375rem]">
-                  forces complètes
-                </span>
-              </p>
-            </div>
-
-            {summary.incomplete > 0 ? (
-              <button
-                type="button"
-                onClick={() => setFilter("incompletes")}
-                className="bg-ochre-wash text-ochre hover:border-ochre cursor-pointer rounded-lg border border-transparent px-4 py-2.5 text-left text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
-              >
-                <span className="font-semibold">{summary.incomplete}</span> force
-                {summary.incomplete > 1 ? "s" : ""} à compléter
-                <span className="block text-[0.8125rem] opacity-80">
-                  Afficher uniquement celles-ci
-                </span>
-              </button>
-            ) : (
-              <p className="text-primary bg-brand-wash rounded-lg px-4 py-2.5 text-sm font-semibold">
-                Les 100 forces sont complètes.
-              </p>
-            )}
-          </div>
-
-          <Progress
-            value={percent}
-            aria-label={`${summary.complete} forces complètes sur ${summary.total}`}
-            className="mt-5 h-1.5"
-          />
-        </section>
-      )}
-
-      <section
-        aria-label="Filtres"
-        className="flex flex-col gap-3 lg:flex-row lg:items-center"
-      >
-        <div className="relative flex-1">
-          <Search
-            aria-hidden="true"
-            className="text-ink-muted pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2"
-          />
-          <Input
-            type="search"
-            className="bg-paper h-11 pl-9"
-            placeholder="Rechercher une force par titre ou par numéro…"
-            aria-label="Rechercher une force"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-
-        <div
-          role="group"
-          aria-label="Filtrer les forces"
-          className="border-line bg-paper flex gap-1 rounded-lg border p-1"
-        >
-          {filterOptions.map(({ value, label, count }) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setFilter(value)}
-              aria-pressed={filter === value}
-              className={`flex-1 cursor-pointer rounded-md px-3 py-2 text-sm whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] ${
-                filter === value
-                  ? "bg-primary font-semibold text-white"
-                  : "text-ink-muted hover:bg-brand-veil"
-              }`}
-            >
-              {label}
-              {typeof count === "number" && (
-                <span className={filter === value ? "opacity-80" : "opacity-70"}>
-                  {" "}
-                  ({count})
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      </section>
+      <div className="relative">
+        <Search
+          aria-hidden="true"
+          className="text-ink-muted pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2"
+        />
+        <Input
+          type="search"
+          className="bg-paper h-11 pl-9"
+          placeholder="Rechercher une force par titre ou par numéro…"
+          aria-label="Rechercher une force"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
 
       <p className="text-ink-muted text-[0.8125rem]">
-        Glissez un PNG sur une ligne pour remplir sa première case libre, ou deux PNG
-        pour déposer les pages A et B d&apos;un coup.
+        Glissez un PNG sur une ligne pour remplacer une page, ou deux PNG pour
+        remplacer les pages A et B d&apos;un coup.
       </p>
 
       {visibleForces.length === 0 ? (
@@ -403,7 +284,7 @@ export default function DataManipulationForces() {
                   <button
                     type="button"
                     onClick={() => setRenumbering(force)}
-                    aria-label={`Changer le numéro de la force ${force.number}, ${force.title}`}
+                    aria-label={`Changer le numéro de la force ${formatForceNumber(force.number)}, ${force.title}`}
                     title="Changer le numéro"
                     className={`group relative flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-sm font-semibold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] ${
                       complete
@@ -412,7 +293,7 @@ export default function DataManipulationForces() {
                     } hover:text-white`}
                   >
                     <span aria-hidden="true" className="group-hover:invisible">
-                      {force.number}
+                      {formatForceNumber(force.number)}
                     </span>
                     <ArrowLeftRight
                       aria-hidden="true"
@@ -426,7 +307,7 @@ export default function DataManipulationForces() {
                         autoFocus
                         value={draftTitle}
                         disabled={savingTitle}
-                        aria-label={`Titre de la force ${force.number}`}
+                        aria-label={`Titre de la force ${formatForceNumber(force.number)}`}
                         onChange={(e) => setDraftTitle(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") handleRenameTitle(force.number);
@@ -466,7 +347,7 @@ export default function DataManipulationForces() {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        aria-label={`Renommer la force ${force.number}`}
+                        aria-label={`Renommer la force ${formatForceNumber(force.number)}`}
                         title="Renommer"
                         onClick={() => startEditing(force)}
                       >
@@ -485,7 +366,6 @@ export default function DataManipulationForces() {
                       page={page}
                       busy={pending.has(`${force.number}-${page}`)}
                       onUpload={(file) => handleUpload(force.number, page, file)}
-                      onDelete={() => handleDelete(force.number, page)}
                     />
                   ))}
                 </div>
@@ -538,7 +418,7 @@ function RenumberDialog({ force, forces, onClose, onSwap }: RenumberDialogProps)
     try {
       await onSwap(force, target);
       toast.success(
-        `Force ${force.number} « ${force.title} » ↔ force ${target} « ${occupant.title} ».`
+        `Force ${formatForceNumber(force.number)} « ${force.title} » ↔ force ${formatForceNumber(target)} « ${occupant.title} ».`
       );
       onClose();
     } catch (err) {
@@ -554,7 +434,7 @@ function RenumberDialog({ force, forces, onClose, onSwap }: RenumberDialogProps)
         <DialogHeader>
           <p className="eyebrow text-brand-deep">Changer le numéro</p>
           <DialogTitle className="font-display text-ink text-xl">
-            {force.number}. {force.title}
+            {formatForceNumber(force.number)}. {force.title}
           </DialogTitle>
         </DialogHeader>
 
@@ -582,7 +462,7 @@ function RenumberDialog({ force, forces, onClose, onSwap }: RenumberDialogProps)
             part à la place de celle-ci. */}
         {occupant ? (
           <p className="bg-ochre-wash text-ochre rounded-lg px-3 py-2.5 text-[0.8125rem]">
-            La force {target} «&nbsp;{occupant.title}&nbsp;» prendra le numéro {force.number}.
+            La force {formatForceNumber(target)} «&nbsp;{occupant.title}&nbsp;» prendra le numéro {formatForceNumber(force.number)}.
           </p>
         ) : (
           <p className="text-ink-muted text-[0.8125rem]">
@@ -610,18 +490,17 @@ type PageSlotProps = {
   page: ForcePage;
   busy: boolean;
   onUpload: (file: File) => void;
-  onDelete: () => void;
 };
 
 /// Une case de dépôt, pour la page A ou B d'une force.
-function PageSlot({ force, page, busy, onUpload, onDelete }: PageSlotProps) {
+function PageSlot({ force, page, busy, onUpload }: PageSlotProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [showPreview, setShowPreview] = useState(false);
 
   const storedKey = page === "a" ? force.pageAKey : force.pageBKey;
   const filename = page === "a" ? force.pageAFilename : force.pageBFilename;
   const label = `Page ${page.toUpperCase()}`;
-  const context = `${label} de la force ${force.number}, ${force.title}`;
+  const context = `${label} de la force ${formatForceNumber(force.number)}, ${force.title}`;
 
   return (
     <div className="flex items-center gap-1">
@@ -665,32 +544,21 @@ function PageSlot({ force, page, busy, onUpload, onDelete }: PageSlotProps) {
         </span>
       </button>
 
+      {/* Pas de bouton « retirer » : les 100 forces sont livrées et le client ne
+          fait que remplacer un visuel par une version plus récente. Vider une case
+          ne ferait que casser la génération du livrable. */}
       {storedKey && (
-        <>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            disabled={busy}
-            aria-label={`Remplacer le visuel — ${context}`}
-            title={`Remplacer la page ${page.toUpperCase()}`}
-            onClick={() => inputRef.current?.click()}
-          >
-            <Upload aria-hidden="true" className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            disabled={busy}
-            aria-label={`Retirer le visuel — ${context}`}
-            title={`Retirer la page ${page.toUpperCase()}`}
-            onClick={onDelete}
-            className="hover:bg-alert-wash text-destructive hover:text-destructive"
-          >
-            <Trash2 aria-hidden="true" className="h-4 w-4" />
-          </Button>
-        </>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          disabled={busy}
+          aria-label={`Remplacer le visuel — ${context}`}
+          title={`Remplacer la page ${page.toUpperCase()}`}
+          onClick={() => inputRef.current?.click()}
+        >
+          <Upload aria-hidden="true" className="h-4 w-4" />
+        </Button>
       )}
 
       {storedKey && (
@@ -732,7 +600,7 @@ function PreviewDialog({
         <DialogHeader>
           <p className="eyebrow text-brand-deep">Page {page.toUpperCase()}</p>
           <DialogTitle className="font-display text-ink text-xl">
-            {forceNumber}. {forceTitle}
+            {formatForceNumber(forceNumber)}. {forceTitle}
           </DialogTitle>
         </DialogHeader>
 

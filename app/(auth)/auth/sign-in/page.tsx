@@ -81,7 +81,7 @@ export default function SignIn() {
     <div className="justify-center items-center text-center lg:p-8 w-full p-4 lg:w-2/3">
       <BrandLogo height={48} priority className="mx-auto mb-6" />
       <h1 className="text-3xl">Bonjour !</h1>
-      <p className="pt-1">Bienvenue sur l&apos;application <b>EnMoi</b>, pour découvrir votre alignement inné-acquis et votre potentiel mental.</p>
+      <p className="pt-1">Bienvenue sur l&apos;application <b>enMOI</b>, pour découvrir votre alignement inné-acquis et votre potentiel mental.</p>
     </div>
 
     <Card className="w-full lg:m-4 max-w-md shadow-lg">

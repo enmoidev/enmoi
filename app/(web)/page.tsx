@@ -1,6 +1,6 @@
 // Accueil public — emplacement réservé au futur site vitrine
 //
-// La présentation d'EnMoi n'est pas encore écrite. Cette page tient donc deux
+// La présentation d'enMOI n'est pas encore écrite. Cette page tient donc deux
 // rôles : signaler visiblement au client que c'est ici que viendra le site
 // vitrine, et donner accès à l'authentification pour le back-office.
 
@@ -32,7 +32,7 @@ export default async function Home() {
             <p className="eyebrow text-brand-deep">Site vitrine</p>
 
             <h1 className="font-display text-ink mt-4 text-[1.75rem] leading-tight sm:text-[2.25rem]">
-              La présentation d&apos;EnMoi prendra place ici.
+              La présentation d&apos;enMOI prendra place ici.
             </h1>
 
             <p className="text-ink-muted mt-5 text-base leading-relaxed">

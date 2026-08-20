@@ -28,7 +28,7 @@ export function BrandLogo({ tone = "brand", height = 44, className, priority = f
   return (
     <Image
       src={SOURCE[tone]}
-      alt="EnMoi"
+      alt="enMOI"
       height={height}
       width={Math.round(height * ASPECT_RATIO)}
       priority={priority}
