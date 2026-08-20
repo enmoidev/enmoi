@@ -91,7 +91,7 @@ export const PAGE_A_FIRST_NAME: TextBox = {
 
 /// Page A — position de la force (1 à 7) en grand, en bas de page.
 /// Centrée dans la largeur, ligne de base à 25 mm du bord inférieur.
-/// ⚠️ C'est la position dans les 7, jamais le numéro de la force sur 100.
+/// ⚠️ C'est la position dans les 7, jamais le numéro de la force (0 à 99).
 export const PAGE_A_FORCE_POSITION: TextBox = {
   xPx: SOURCE_WIDTH_PX / 2,
   yPx: 3202,

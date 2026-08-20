@@ -6,7 +6,7 @@ export type DeliverableId = "freemium" | "livrable1" | "livrable2";
 
 /// Une force retenue pour un livrable, à sa position dans les 7.
 export type PdfForce = {
-  /// Numéro de la force sur 100 — sert uniquement à retrouver les visuels,
+  /// Numéro de la force, de 0 à 99 — sert uniquement à retrouver les visuels,
   /// n'est jamais imprimé sur le document.
   number: number;
   /// Titre de la force. Déjà gravé dans les visuels de la fiche ; sert à la roue

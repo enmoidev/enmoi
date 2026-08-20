@@ -7,7 +7,7 @@
 //
 // ⚠️ CES FORMULES SONT DES PLACEHOLDERS TECHNIQUES, PAS LES FORMULES MÉTIER.
 //
-// Elles garantissent seulement un résultat entier entre 1 et 100, ce qui permet
+// Elles garantissent seulement un résultat entier entre 0 et 99, ce qui permet
 // de faire tourner la chaîne complète (calcul → sélection des visuels → PDF) sans
 // attendre le client. Les forces qu'elles désignent n'ont AUCUNE signification.
 // Un PMI produit avec ces expressions est un document de test : il ne doit jamais

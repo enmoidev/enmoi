@@ -12,6 +12,7 @@ import {
 } from "@/lib/computeFunctions/computeFunctions";
 import { type DeliverableId, type PdfData, type PdfForce } from "@/types/pdf";
 import { ROLE_COUNT, roleOverlayText } from "@/lib/forces/roles";
+import { forceNumberSchema } from "@/lib/forces/forceAssets";
 import { getAuthSession } from "@/lib/auth-utils/getAuthSession";
 import { requireRole } from "@/lib/auth-utils/requireRole";
 import { apiError, BusinessError } from "@/lib/api/apiError";
@@ -43,7 +44,7 @@ const requestSchema = z.object({
   // calculés à partir de la date de naissance. Réservé au back-office pour valider
   // l'assemblage du livrable sans dépendre des formules.
   forceNumbers: z
-    .array(z.number().int().min(1).max(100))
+    .array(forceNumberSchema)
     .length(7, "Il faut exactement 7 numéros de force.")
     .optional(),
 });

@@ -31,7 +31,7 @@ enum Role {
 /// n'aient été déposés.
 model Force {
   id       String  @id @default(cuid())
-  number   Int     @unique /// 1 à 100, sert à choisir le bon visuel
+  number   Int     @unique /// 0 à 99, sert à choisir le bon visuel
   title    String
   pageAKey String? /// clé S3 de la page A
   pageBKey String? /// clé S3 de la page B

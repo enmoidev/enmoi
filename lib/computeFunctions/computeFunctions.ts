@@ -1,7 +1,11 @@
 // Calcul des 7 numéros de force à partir d'une date de naissance
 
 import { evaluateExpression, FormulaError, type Scope } from "./evaluateExpression";
-import { TOTAL_FORCES } from "@/lib/forces/forceAssets";
+import {
+  FIRST_FORCE_NUMBER,
+  FORCE_NUMBER_RANGE,
+  LAST_FORCE_NUMBER,
+} from "@/lib/forces/forceAssets";
 
 export { FormulaError } from "./evaluateExpression";
 
@@ -55,9 +59,9 @@ export function evaluateFormula(expression: string, variables: BirthVariables): 
 
 /// Évalue une formule et vérifie que le résultat désigne bien une force.
 ///
-/// Le résultat doit être un entier de 1 à 100 : c'est un numéro de force, pas une
+/// Le résultat doit être un entier de 0 à 99 : c'est un numéro de force, pas une
 /// valeur continue. On échoue explicitement plutôt que d'arrondir ou de replier la
-/// valeur, ce qui produirait un PMI faux sans que personne ne s'en aperçoive.
+/// valeur, ce qui produirait un livrable faux sans que personne ne s'en aperçoive.
 export function evaluateForceNumber(
   expression: string,
   variables: BirthVariables,
@@ -72,9 +76,9 @@ export function evaluateForceNumber(
     );
   }
 
-  if (raw < 1 || raw > TOTAL_FORCES) {
+  if (raw < FIRST_FORCE_NUMBER || raw > LAST_FORCE_NUMBER) {
     throw new FormulaError(
-      `La formule ${position} donne ${raw}, hors de l'intervalle 1 à ${TOTAL_FORCES}.`
+      `La formule ${position} donne ${raw}, hors de l'intervalle ${FORCE_NUMBER_RANGE}.`
     );
   }
 

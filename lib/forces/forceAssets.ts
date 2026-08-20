@@ -8,6 +8,15 @@ export type ForcePage = (typeof FORCE_PAGES)[number];
 
 export const TOTAL_FORCES = 100;
 
+/// Les forces sont numérotées **de 0 à 99**, numérotation retenue par le client.
+/// Ces deux bornes sont la source unique : tout ce qui valide, seede ou affiche
+/// un numéro de force s'y réfère, jamais à des littéraux.
+export const FIRST_FORCE_NUMBER = 0;
+export const LAST_FORCE_NUMBER = FIRST_FORCE_NUMBER + TOTAL_FORCES - 1;
+
+/// « 0 et 99 » — pour les messages destinés à l'administrateur.
+export const FORCE_NUMBER_RANGE = `${FIRST_FORCE_NUMBER} et ${LAST_FORCE_NUMBER}`;
+
 /// Dimensions attendues : A4 à 300 DPI, format des gabarits fournis par le client.
 export const EXPECTED_WIDTH_PX = 2480;
 export const EXPECTED_HEIGHT_PX = 3508;
@@ -18,8 +27,8 @@ export const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
 export const forceNumberSchema = z.coerce
   .number()
   .int("Le numéro de force doit être un entier.")
-  .min(1, "Le numéro de force doit être compris entre 1 et 100.")
-  .max(TOTAL_FORCES, "Le numéro de force doit être compris entre 1 et 100.");
+  .min(FIRST_FORCE_NUMBER, `Le numéro de force doit être compris entre ${FORCE_NUMBER_RANGE}.`)
+  .max(LAST_FORCE_NUMBER, `Le numéro de force doit être compris entre ${FORCE_NUMBER_RANGE}.`);
 
 export const forcePageSchema = z.enum(FORCE_PAGES);
 

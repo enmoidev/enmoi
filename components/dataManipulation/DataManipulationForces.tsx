@@ -15,6 +15,11 @@ import {
   Upload,
   X,
 } from "lucide-react";
+import {
+  FIRST_FORCE_NUMBER,
+  FORCE_NUMBER_RANGE,
+  LAST_FORCE_NUMBER,
+} from "@/lib/forces/forceAssets";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Progress } from "../ui/progress";
@@ -511,7 +516,8 @@ type RenumberDialogProps = {
 
 /// Réattribue le numéro d'une force.
 ///
-/// Les 100 numéros sont tous pris : l'opération est donc toujours un échange.
+/// Les 100 numéros (0 à 99) sont tous pris : l'opération est donc toujours un
+/// échange.
 /// Le dialogue nomme la force qui va recevoir l'ancien numéro, pour que
 /// l'administrateur voie qu'il déplace deux lignes et non une seule.
 function RenumberDialog({ force, forces, onClose, onSwap }: RenumberDialogProps) {
@@ -520,7 +526,10 @@ function RenumberDialog({ force, forces, onClose, onSwap }: RenumberDialogProps)
 
   const target = Number(draft);
   const isValid =
-    Number.isInteger(target) && target >= 1 && target <= forces.length && target !== force.number;
+    Number.isInteger(target) &&
+    target >= FIRST_FORCE_NUMBER &&
+    target <= LAST_FORCE_NUMBER &&
+    target !== force.number;
   const occupant = isValid ? forces.find((f) => f.number === target) : undefined;
 
   const submit = async () => {
@@ -551,13 +560,13 @@ function RenumberDialog({ force, forces, onClose, onSwap }: RenumberDialogProps)
 
         <label className="block">
           <span className="text-ink-muted text-[0.8125rem]">
-            Nouveau numéro (1 à {forces.length})
+            Nouveau numéro ({FORCE_NUMBER_RANGE})
           </span>
           <Input
             autoFocus
             type="number"
-            min={1}
-            max={forces.length}
+            min={FIRST_FORCE_NUMBER}
+            max={LAST_FORCE_NUMBER}
             value={draft}
             disabled={saving}
             onChange={(e) => setDraft(e.target.value)}
@@ -579,7 +588,7 @@ function RenumberDialog({ force, forces, onClose, onSwap }: RenumberDialogProps)
           <p className="text-ink-muted text-[0.8125rem]">
             {draft.trim() === "" || target === force.number
               ? "Saisissez un numéro différent de l’actuel."
-              : `Numéro invalide : attendu entre 1 et ${forces.length}.`}
+              : `Numéro invalide : attendu entre ${FORCE_NUMBER_RANGE}.`}
           </p>
         )}
 

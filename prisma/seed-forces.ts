@@ -12,20 +12,25 @@ const prisma = new PrismaClient();
 
 export const TOTAL_FORCES = 100;
 
-/// Titres confirmés par les visuels livrés par le client.
+/// Les forces sont numérotées **de 0 à 99** (numérotation du client).
+export const FIRST_FORCE_NUMBER = 0;
+export const LAST_FORCE_NUMBER = FIRST_FORCE_NUMBER + TOTAL_FORCES - 1;
+
+/// Titres confirmés par les visuels livrés par le client, dans l'ordre du lot 1 :
+/// la première force livrée porte le numéro 0, la dixième le numéro 9.
 /// Les forces absentes de cette table reçoivent un titre provisoire, à corriger
 /// depuis le back-office au fur et à mesure des livraisons.
 const KNOWN_TITLES: Record<number, string> = {
-  1: "La Créative audacieuse",
-  2: "La Flamme",
-  3: "L'Harmonisatrice",
-  4: "La Perfectionniste",
-  5: "La Communicante",
-  6: "L'Opportuniste ardente",
-  7: "La Meneuse",
-  8: "L'Intuitive optimiste",
-  9: "La Gardienne des valeurs",
-  10: "La Bâtisseuse fraternelle",
+  0: "La Créative audacieuse",
+  1: "La Flamme",
+  2: "L'Harmonisatrice",
+  3: "La Perfectionniste",
+  4: "La Communicante",
+  5: "L'Opportuniste ardente",
+  6: "La Meneuse",
+  7: "L'Intuitive optimiste",
+  8: "La Gardienne des valeurs",
+  9: "La Bâtisseuse fraternelle",
 };
 
 function titleFor(number: number): string {
@@ -39,7 +44,7 @@ async function main() {
   const existingNumbers = new Set(existing.map((f) => f.number));
 
   const toCreate = [];
-  for (let number = 1; number <= TOTAL_FORCES; number++) {
+  for (let number = FIRST_FORCE_NUMBER; number <= LAST_FORCE_NUMBER; number++) {
     if (!existingNumbers.has(number)) {
       toCreate.push({ number, title: titleFor(number) });
     }

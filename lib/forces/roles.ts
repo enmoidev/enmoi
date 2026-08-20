@@ -1,7 +1,7 @@
 // Les 7 rôles symboliques, source unique — back-office et livrable
 //
 // Le rôle dépend de la POSITION dans les 7 (1 à 7), jamais du numéro de la force
-// (1-100). Les libellés viennent de la « Fiche explicative » fournie par le client.
+// (0-99). Les libellés viennent de la « Fiche explicative » fournie par le client.
 
 /// Un rôle = un nom court et sa description.
 export type ForceRole = { readonly name: string; readonly description: string };

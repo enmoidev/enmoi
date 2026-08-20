@@ -1,6 +1,6 @@
 // Échange les numéros de deux forces
 //
-// Les 100 numéros étant tous attribués, déplacer une force vers un numéro déjà
+// Les 100 numéros (0 à 99) étant tous attribués, déplacer une force vers un numéro
 // pris est nécessairement un échange : la force qui l'occupait reçoit l'ancien
 // numéro. Il n'y a pas de « case libre » où la ranger.
 //
@@ -24,7 +24,7 @@ const bodySchema = z.object({ target: forceNumberSchema });
 /// Numéro de transit, le temps de l'échange.
 ///
 /// `number` est unique : passer directement le numéro de A à B violerait la
-/// contrainte. On gare donc A hors des bornes métier (1 à 100) le temps de
+/// contrainte. On gare donc A hors des bornes métier (0 à 99) le temps de
 /// libérer sa place. Négatif, donc hors d'atteinte d'une force réelle.
 const PARKING_NUMBER = -1;
 

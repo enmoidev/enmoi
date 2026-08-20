@@ -10,8 +10,8 @@ EnMoi est une solution de développement personnel fondée sur l'**inné** et l'
 Le principe métier :
 
 1. On part de la **date de naissance** d'une personne.
-2. **7 formules mathématiques** (paramétrables en base) calculent 7 nombres compris entre 1 et 100.
-3. Chacun de ces nombres désigne une **Force** (anciennement « aptitude ») parmi 100.
+2. **7 formules mathématiques** (paramétrables en base) calculent 7 nombres compris entre 0 et 99.
+3. Chacun de ces nombres désigne une **Force** (anciennement « aptitude ») parmi les 100, numérotées **de 0 à 99**.
 4. On génère un **PDF livrable**, composé de pages d'introduction personnalisées, de
    **2 pages par force** développée, puis de pages de méthode.
 
@@ -91,7 +91,7 @@ Quatre valeurs seulement, sur les zones laissées vides à dessein dans les gaba
 | B | `Force ___ /7 :` — blanc entre « Force » et « /7 » | la **position 1 à 7** |
 | B | `Son rôle :` — blanc à droite du libellé | le **rôle symbolique** de la position |
 
-⚠️ Le chiffre imprimé est la **position dans les 7**, jamais le numéro de la force (1-100). Ce
+⚠️ Le chiffre imprimé est la **position dans les 7**, jamais le numéro de la force (0-99). Ce
 numéro n'apparaît nulle part sur les pages livrées ; il ne sert qu'à choisir le bon PNG. Le
 fichier d'exemple du client montre bien la même fiche déclinée avec les 7 chiffres possibles.
 
@@ -273,13 +273,16 @@ Les variables sont passées dans une **portée explicite**, pas substituées tex
 contrainte d'ordre de l'ancienne implémentation (remplacer `a5` avant `a1`) n'existe plus : on
 peut ajouter une variable dont le nom préfixe une autre sans rien casser.
 
-`evaluateForceNumber()` vérifie en plus que le résultat est un **entier de 1 à 100**. Hors de ces
+`evaluateForceNumber()` vérifie en plus que le résultat est un **entier de 0 à 99**. Hors de ces
 bornes, la génération échoue avec un message nommant la formule fautive — jamais d'arrondi ou de
 repli silencieux qui produirait un PMI faux.
 
-⚠️ Les formules installées par `seed-mathfunctions.ts` sont des **placeholders** qui produisent
-des décimaux hors bornes. Tant que le client n'a pas fourni ses vraies expressions, la génération
-d'un PMI échoue volontairement.
+⚠️ Les formules installées par `seed-mathfunctions.ts` sont des **placeholders techniques**, pas
+les formules métier. Elles garantissent seulement un entier dans les bornes — vérifié
+exhaustivement sur les 73 414 dates valides de 1900 à 2100, les 100 numéros étant atteints — ce qui
+permet de faire tourner la chaîne complète sans attendre le client. Les forces qu'elles désignent
+n'ont aucune signification : **un livrable produit avec ces expressions est un document de test**
+et ne doit jamais être remis à une personne réelle.
 
 ## État actuel et dettes connues
 
@@ -339,7 +342,7 @@ Le modèle `Aptitude` a été remplacé par un modèle `Force` minimal, sur une 
 ```prisma
 model Force {
   id        String   @id @default(cuid())
-  number    Int      @unique   // 1 à 100
+  number    Int      @unique   // 0 à 99
   title     String
   pageAKey  String?            // clé de l'objet stocké (page A)
   pageBKey  String?            // clé de l'objet stocké (page B)
@@ -356,6 +359,12 @@ Le champ `title` ne sert **qu'au back-office et à la page de synthèse** : le t
 déjà gravé dans les visuels. `seed-forces.ts` crée les 100 lignes et connaît les 10 titres
 confirmés par les visuels livrés ; les 90 autres portent un titre provisoire, à corriger au fur
 et à mesure des livraisons du client.
+
+Les bornes de la numérotation sont déclarées une seule fois, dans `lib/forces/forceAssets.ts`
+(`FIRST_FORCE_NUMBER`, `LAST_FORCE_NUMBER`, `FORCE_NUMBER_RANGE`) : validation d'API, seed,
+évaluateur de formules et back-office s'y réfèrent, jamais à des littéraux. ⚠️ Le client numérote
+**de 0 à 99** alors que ses dossiers de livraison numérotent 1 à 20 **par lot** : la numérotation
+globale est produite à l'import, elle ne figure nulle part chez lui.
 
 Le back-office propose une **médiathèque des forces** (`/admin/forces`) en remplacement de
 l'ancien « Gestion des aptitudes ».
@@ -456,6 +465,9 @@ npm run migrate:postgres                      # applique les migrations en prod 
 
 npx tsx prisma/seed-mathfunctions.ts          # seed des 7 formules (idempotent)
 npx tsx prisma/seed.ts                        # seed du compte admin
+
+# renumérotation 1-100 → 0-99 des forces déjà en base (une seule fois, --dry-run pour voir)
+npx tsx prisma/renumber-forces-zero-based.ts --dry-run
 
 # aperçu d'un livrable avec des données factices, sans base ni S3 — sert au calage
 npx tsx scripts/preview-livrable.ts freemium|livrable1|livrable2 [sortie.pdf]

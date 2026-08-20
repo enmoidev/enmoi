@@ -8,7 +8,7 @@
 //
 // Il n'existe que pour remettre l'environnement de développement dans un état
 // exploitable, les expressions historiques produisant des résultats hors de
-// l'intervalle 1-100 et bloquant donc toute génération de PMI.
+// l'intervalle 0-99 et bloquant donc toute génération de livrable.
 
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
@@ -26,7 +26,7 @@ async function main() {
     existing.forEach((f) => console.log(`  ${f.number}. ${f.expression}`));
   }
 
-  console.log("\nRemplacement par les placeholders bornés à 1-100 :");
+  console.log("\nRemplacement par les placeholders bornés à 0-99 :");
 
   for (const [index, expression] of PLACEHOLDER_EXPRESSIONS.entries()) {
     const number = index + 1;
