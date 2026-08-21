@@ -10,8 +10,13 @@ import { Skeleton } from "../ui/skeleton";
 import { toast } from "react-hot-toast";
 import { Calculator, ChevronDown, Loader2, Save, TriangleAlert } from "lucide-react";
 import { buildBirthVariables, evaluateFormula } from "@/lib/computeFunctions/computeFunctions";
+import {
+  describeRange,
+  isDefaultSet,
+  selectFormulaSet,
+} from "@/lib/computeFunctions/formulaSets";
 import { Label } from "../ui/label";
-import { MathFunctionType } from "@/types/modelPrisma";
+import { FormulaSetType, MathFunctionType } from "@/types/modelPrisma";
 import { roleForPosition } from "@/components/admin/forceRoles";
 
 /// Variables utilisables dans une expression, telles que substituées côté serveur.
@@ -26,7 +31,8 @@ const availableVariables: { name: string; meaning: string }[] = [
 
 export default function DataManipulationFunctions() {
 
-  const [functions, setFunctions] = useState<MathFunctionType[]>([]);
+  const [sets, setSets] = useState<FormulaSetType[]>([]);
+  const [selectedSetId, setSelectedSetId] = useState<string | null>(null);
   const [selectedFunction, setSelectedFunction] = useState<MathFunctionType | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -34,90 +40,94 @@ export default function DataManipulationFunctions() {
   const [generatedNumbers, setGeneratedNumbers] = useState<
     { title: number; result: number | null; error?: string }[]
   >([]);
+  /// Jeu réellement appliqué au dernier calcul du banc d'essai.
+  const [testedSet, setTestedSet] = useState<FormulaSetType | null>(null);
+
+  const selectedSet = sets.find((s) => s.id === selectedSetId) ?? null;
+  const functions = selectedSet?.functions ?? [];
 
   useEffect(() => {
-
-    const fetchFunctions = async () => {
-
+    const fetchSets = async () => {
       setLoading(true);
-
       try {
-        const res = await fetch("/api/mathFunctions");
-
-        if (!res.ok) throw new Error("Erreur lors du chargement");
-
+        const res = await fetch("/api/formulaSets");
         const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Erreur lors du chargement");
 
-        setFunctions(data);
-      }
-
-      catch {
-        toast.error("Impossible de charger les formules");
-      }
-
-      finally {
+        setSets(data.sets);
+        // Le jeu par défaut est le point d'entrée naturel.
+        setSelectedSetId(
+          (data.sets as FormulaSetType[]).find(isDefaultSet)?.id ?? data.sets[0]?.id ?? null
+        );
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Impossible de charger les formules");
+      } finally {
         setLoading(false);
       }
     };
-    fetchFunctions();
+    fetchSets();
   }, []);
 
-  const handleSave = async () => {
+  /// Remplace un jeu dans la liste, en conservant l'ordre.
+  const applyUpdatedSet = (updated: FormulaSetType) => {
+    setSets((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+  };
 
-    if (!selectedFunction) return;
+  const handleSave = async () => {
+    if (!selectedFunction || !selectedSet) return;
 
     setSaving(true);
-
     try {
       const res = await fetch(`/api/mathFunctions/${selectedFunction.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(selectedFunction),
+        body: JSON.stringify({ expression: selectedFunction.expression }),
+      });
+      const updated = await res.json();
+      if (!res.ok) throw new Error(updated.error ?? "Erreur lors de l'enregistrement");
+
+      applyUpdatedSet({
+        ...selectedSet,
+        functions: selectedSet.functions.map((f) => (f.id === updated.id ? updated : f)),
       });
 
-      if (!res.ok) throw new Error();
-
-      const updated = await res.json();
-
-      setFunctions((prev) => prev.map((f) => (f.id === updated.id ? updated : f)));
-
       toast.success("Formule mise à jour !");
-
-    }
-
-    catch {
-      toast.error("Erreur lors de l'enregistrement");
-    }
-
-    finally {
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur lors de l'enregistrement");
+    } finally {
       setSaving(false);
     }
   };
 
   const handleGenerateNumbers = () => {
-
-    if (!birthDate){
+    if (!birthDate) {
       toast.error("Veuillez sélectionner une date de naissance");
       return;
     }
+
+    // Le banc d'essai applique le jeu que le générateur choisirait pour cette
+    // année-là, pas celui qu'on est en train d'éditer : c'est le seul moyen de
+    // vérifier qu'une tranche prend bien le relais.
+    const applicable = selectFormulaSet(sets, birthDate.getFullYear());
+    setTestedSet(applicable);
 
     const variables = buildBirthVariables(birthDate);
 
     // Chaque formule est évaluée indépendamment : une expression fautive affiche
     // son message d'erreur sans empêcher le calcul des six autres.
-    const results = functions.map((f) => {
-      try {
-        return { title: f.number, result: evaluateFormula(f.expression, variables) };
-      } catch (err) {
-        return {
-          title: f.number,
-          result: null,
-          error: err instanceof Error ? err.message : "Formule invalide.",
-        };
-      }
-    });
-
-    setGeneratedNumbers(results);
+    setGeneratedNumbers(
+      applicable.functions.map((f) => {
+        try {
+          return { title: f.number, result: evaluateFormula(f.expression, variables) };
+        } catch (err) {
+          return {
+            title: f.number,
+            result: null,
+            error: err instanceof Error ? err.message : "Formule invalide.",
+          };
+        }
+      })
+    );
   };
 
   // Dernier diagnostic connu par position : c'est ce qui rend une expression
@@ -140,6 +150,52 @@ export default function DataManipulationFunctions() {
           Sélectionnez une formule pour modifier son expression. La position
           détermine le rôle symbolique imprimé dans le livrable.
         </p>
+
+        {/* ── Jeux de formules ──
+            Chaque jeu couvre une tranche d'années de naissance ; le jeu par
+            défaut s'applique partout ailleurs. */}
+        <div className="border-line mt-5 rounded-lg border p-3">
+          <p className="text-ink-muted text-[0.8125rem]">
+            Les formules dépendent de l&apos;année de naissance. Choisissez le jeu à
+            modifier.
+          </p>
+
+          <div role="group" aria-label="Jeu de formules" className="mt-3 flex flex-wrap gap-2">
+            {sets.map((set) => (
+              <button
+                key={set.id}
+                type="button"
+                onClick={() => {
+                  setSelectedSetId(set.id);
+                  setSelectedFunction(null);
+                }}
+                aria-pressed={selectedSetId === set.id}
+                className={`cursor-pointer rounded-md px-3 py-2 text-left text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] ${
+                  selectedSetId === set.id
+                    ? "bg-primary font-semibold text-white"
+                    : "border-line text-ink-muted hover:bg-brand-veil border"
+                }`}
+              >
+                {set.label}
+                <span
+                  className={`block text-[0.75rem] ${
+                    selectedSetId === set.id ? "opacity-80" : "opacity-70"
+                  }`}
+                >
+                  {describeRange(set)}
+                </span>
+              </button>
+            ))}
+
+          </div>
+
+          {selectedSet && !isDefaultSet(selectedSet) && (
+            <p className="border-line/70 text-ink-muted mt-3 border-t pt-3 text-[0.8125rem]">
+              Ce jeu remplace entièrement le jeu par défaut pour les{" "}
+              {describeRange(selectedSet)}.
+            </p>
+          )}
+        </div>
 
         {loading ? (
           <div className="mt-5 space-y-2" aria-busy="true">
@@ -279,6 +335,25 @@ export default function DataManipulationFunctions() {
               ))}
             </ul>
 
+            {/* La juxtaposition ne se devine pas : elle mérite son propre encart. */}
+            <div className="bg-brand-veil mt-4 rounded-lg px-4 py-3">
+              <p className="text-ink text-sm font-medium">Accoler deux variables</p>
+              <p className="text-ink-muted mt-1 text-[0.8125rem]">
+                Les variables d&apos;un seul chiffre peuvent s&apos;écrire à la suite
+                pour former un nombre. Pour une naissance le 04/07/1993 :{" "}
+                <code className="text-primary font-mono">a3a4</code> vaut 93 et{" "}
+                <code className="text-primary font-mono">j2m1</code> vaut 40.
+              </p>
+              <p className="text-ink-muted mt-1.5 text-[0.8125rem]">
+                Seules <code className="font-mono">j1 j2 m1 m2 a1 a2 a3 a4</code> le
+                permettent. <code className="font-mono">j3</code>,{" "}
+                <code className="font-mono">m3</code> et{" "}
+                <code className="font-mono">a5</code> portent des valeurs complètes,
+                dont la longueur change d&apos;une date à l&apos;autre : les accoler
+                donnerait un résultat différent selon la personne.
+              </p>
+            </div>
+
             <Image
               src="/pictures/formule-tuto.png"
               alt="Schéma de composition d'une formule à partir d'une date de naissance"
@@ -301,6 +376,10 @@ export default function DataManipulationFunctions() {
         <p className="text-ink-muted mt-2 text-sm">
           Une date de naissance, et les 7 formules donnent les numéros des forces
           correspondantes. Rien n&apos;est enregistré.
+        </p>
+        <p className="text-ink-muted mt-2 text-[0.8125rem]">
+          Le calcul applique le jeu correspondant à l&apos;année saisie, pas
+          forcément celui affiché à gauche.
         </p>
 
         <div className="mt-5 space-y-3">
@@ -325,6 +404,12 @@ export default function DataManipulationFunctions() {
             Calculer les 7 numéros
           </Button>
         </div>
+
+        {testedSet && generatedNumbers.length > 0 && (
+          <p className="bg-brand-veil text-brand-deep mt-4 rounded-lg px-3 py-2 text-[0.8125rem]">
+            Jeu appliqué : <strong>{testedSet.label}</strong> ({describeRange(testedSet)})
+          </p>
+        )}
 
         {generatedNumbers.length > 0 && (
           <ol className="mt-5 space-y-1" aria-live="polite">

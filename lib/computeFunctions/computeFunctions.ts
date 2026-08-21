@@ -18,12 +18,35 @@ export { FormulaError } from "./evaluateExpression";
 /// n'existe plus.
 export type BirthVariables = Scope;
 
+/// Les variables qui ne valent qu'un seul chiffre, et peuvent donc être accolées
+/// dans une formule pour en former un nombre : `a3a4` vaut 93 pour une naissance
+/// en 1993, `j2m1` vaut 40 pour un 04/07.
+///
+/// ⚠️ `j3`, `m3` et `a5` en sont volontairement exclus : ils portent le jour, le
+/// mois et l'année **complets**, dont le nombre de chiffres varie d'une date à
+/// l'autre. Les accoler donnerait un résultat dépendant de la date — `m3m3`
+/// vaudrait 77 en juillet et 1010 en octobre — c'est-à-dire une formule qui ne
+/// veut plus rien dire.
+export const CONCATENABLE_VARIABLES = [
+  "j1",
+  "j2",
+  "m1",
+  "m2",
+  "a1",
+  "a2",
+  "a3",
+  "a4",
+] as const;
+
 /// Décompose une date de naissance en variables de formule.
 ///
 ///   j3 / m3 / a5 : jour, mois et année complets
 ///   j1, j2       : les deux chiffres du jour
 ///   m1, m2       : les deux chiffres du mois
 ///   a1..a4       : les quatre chiffres de l'année
+///
+/// Les huit variables d'un chiffre peuvent en outre être accolées entre elles,
+/// voir CONCATENABLE_VARIABLES.
 export function buildBirthVariables(birthDate: Date): BirthVariables {
   if (Number.isNaN(birthDate.getTime())) {
     throw new FormulaError("Date de naissance invalide.");
@@ -54,7 +77,9 @@ export function buildBirthVariables(birthDate: Date): BirthVariables {
 
 /// Évalue une formule. Lève une FormulaError si l'expression est invalide.
 export function evaluateFormula(expression: string, variables: BirthVariables): number {
-  return evaluateExpression(expression, variables);
+  return evaluateExpression(expression, variables, {
+    concatenable: CONCATENABLE_VARIABLES,
+  });
 }
 
 /// Évalue une formule et vérifie que le résultat désigne bien une force.

@@ -8,7 +8,13 @@
 //   terme      := facteur (("*" | "/" | "%") facteur)*
 //   facteur    := unaire ("^" facteur)?          -- associatif à droite
 //   unaire     := ("-" | "+")? primaire
-//   primaire   := nombre | variable | fonction "(" args ")" | "(" expression ")"
+//   primaire   := nombre | variable | juxtaposition
+//                 | fonction "(" args ")" | "(" expression ")"
+//
+// La **juxtaposition** accole les chiffres de plusieurs variables pour en former
+// un nombre : pour une naissance le 04/07/1993, `a3a4` vaut 93 et `j2m1` vaut 40.
+// Elle n'est ouverte qu'aux variables déclarées `concatenable` par l'appelant, et
+// seulement à celles-là : voir la note dans computeFunctions.ts.
 //
 // Sûr par construction : aucune propriété d'objet n'est lue dynamiquement et
 // aucun code n'est généré. Les variables sont résolues dans une portée explicite,
@@ -24,6 +30,40 @@ export class FormulaError extends Error {
 }
 
 export type Scope = Readonly<Record<string, number>>;
+
+export type EvaluateOptions = {
+  /// Variables autorisées à être accolées entre elles (« a3a4 »).
+  ///
+  /// La liste est **statique**, jamais déduite des valeurs : si l'on acceptait
+  /// toute variable qui se trouve valoir un seul chiffre, `m3m3` fonctionnerait
+  /// en juillet (mois 7) et échouerait en octobre (mois 10). Une formule doit se
+  /// comporter de la même façon pour toutes les dates de naissance.
+  concatenable?: readonly string[];
+};
+
+/// Découpe un nom en une suite de variables accolées, ou renvoie null.
+///
+/// Correspondance gloutonne sur le plus long préfixe : les noms actuels font
+/// tous deux caractères, mais rien n'oblige à ce que ça dure.
+function splitConcatenation(
+  name: string,
+  concatenable: readonly string[]
+): string[] | null {
+  const byLengthDesc = [...concatenable].sort((a, b) => b.length - a.length);
+  const parts: string[] = [];
+  let rest = name;
+
+  while (rest.length > 0) {
+    const match = byLengthDesc.find((candidate) => rest.startsWith(candidate));
+    if (!match) return null;
+    parts.push(match);
+    rest = rest.slice(match.length);
+  }
+
+  // Une seule partie n'est pas une juxtaposition : ce cas est déjà traité par la
+  // résolution normale, et l'accepter ici masquerait une variable absente.
+  return parts.length >= 2 ? parts : null;
+}
 
 const FUNCTIONS: Readonly<Record<string, (args: number[]) => number>> = {
   abs: ([x]) => Math.abs(x),
@@ -93,10 +133,16 @@ function tokenize(input: string): Token[] {
 }
 
 /// Évalue une expression arithmétique dans une portée de variables donnée.
-export function evaluateExpression(expression: string, scope: Scope): number {
+export function evaluateExpression(
+  expression: string,
+  scope: Scope,
+  options: EvaluateOptions = {}
+): number {
   if (!expression.trim()) {
     throw new FormulaError("La formule est vide.");
   }
+
+  const concatenable = options.concatenable ?? [];
 
   const tokens = tokenize(expression);
   let position = 0;
@@ -199,13 +245,36 @@ export function evaluateExpression(expression: string, scope: Scope): number {
       }
 
       // Variable — résolue dans la portée, sans jamais parcourir un prototype.
-      if (!Object.hasOwn(scope, name)) {
-        const available = Object.keys(scope).sort().join(", ");
-        throw new FormulaError(
-          `Variable inconnue : « ${name} ». Variables disponibles : ${available}.`
-        );
+      if (Object.hasOwn(scope, name)) {
+        return scope[name];
       }
-      return scope[name];
+
+      // Juxtaposition : « a3a4 » accole les chiffres de a3 et a4.
+      // La portée est consultée en premier, donc une vraie variable ne peut
+      // jamais être masquée par une lecture en juxtaposition.
+      const parts = splitConcatenation(name, concatenable);
+      if (parts) {
+        return parts.reduce((accumulated, part) => {
+          const digit = scope[part];
+          if (!Number.isInteger(digit) || digit < 0 || digit > 9) {
+            throw new FormulaError(
+              `« ${part} » vaut ${digit} : seules des variables d'un seul chiffre ` +
+                `peuvent être accolées.`
+            );
+          }
+          return accumulated * 10 + digit;
+        }, 0);
+      }
+
+      const available = Object.keys(scope).sort().join(", ");
+      const juxtaposables = [...concatenable].sort().join(", ");
+      throw new FormulaError(
+        `Variable inconnue : « ${name} ». Variables disponibles : ${available}.` +
+          (juxtaposables
+            ? ` Ces variables peuvent aussi être accolées pour former un nombre ` +
+              `(« a3a4 » vaut 93 pour une naissance en 1993) : ${juxtaposables}.`
+            : "")
+      );
     }
 
     if (token.value === "(") {

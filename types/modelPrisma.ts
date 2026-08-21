@@ -20,3 +20,13 @@ export type MathFunctionType = {
   number: number;
   expression: string;
 };
+
+/// Un jeu complet des 7 formules, appliqué à une tranche d'années de naissance.
+/// Bornes nulles = jeu par défaut, appliqué hors tranches.
+export type FormulaSetType = {
+  id: string;
+  label: string;
+  yearFrom: number | null;
+  yearTo: number | null;
+  functions: MathFunctionType[];
+};

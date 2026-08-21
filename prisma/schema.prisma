@@ -49,13 +49,38 @@ model Force {
 
 /// Les 7 formules mathématiques qui transforment une date de naissance
 /// en 7 numéros de force. Éditables depuis /admin/formules.
-model MathFunction {
-  id         String   @id @default(cuid())
-  number     Int      @unique /// position 1 à 7
-  expression String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+/// Un jeu complet des 7 formules, appliqué à une tranche d'années de naissance.
+///
+/// Le jeu **par défaut** porte `yearFrom` et `yearTo` à null : il s'applique à
+/// toutes les dates qu'aucune tranche ne couvre. Il en existe exactement un.
+///
+/// Les autres jeux couvrent une tranche bornée, incluse de part et d'autre —
+/// le premier cas est 2000-2009, où les formules du client diffèrent. Les
+/// tranches ne doivent pas se chevaucher : la contrainte n'est pas exprimable
+/// en SQL, elle est vérifiée à l'écriture (voir app/api/formulaSets).
+model FormulaSet {
+  id         String         @id @default(cuid())
+  label      String
+  yearFrom   Int?
+  yearTo     Int?
+  functions  MathFunction[]
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
 
+  @@map("formula_set")
+}
+
+model MathFunction {
+  id         String     @id @default(cuid())
+  setId      String
+  set        FormulaSet @relation(fields: [setId], references: [id], onDelete: Cascade)
+  number     Int        /// position 1 à 7
+  expression String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  /// Une seule expression par position dans un jeu donné.
+  @@unique([setId, number])
   @@map("math_function")
 }
 

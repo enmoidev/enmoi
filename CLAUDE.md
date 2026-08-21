@@ -250,8 +250,34 @@ Rôles : `ADMIN` | `CUSTOMER` (enum Prisma, par défaut `CUSTOMER`).
 
 ### Formules mathématiques
 
-Les 7 expressions sont stockées en base (`MathFunction.expression`) et éditables depuis
-`/admin/formules`.
+Les expressions sont stockées en base et éditables depuis `/admin/formules`.
+
+### Jeux de formules par tranche d'années
+
+Les 7 formules ne sont pas universelles : le client applique des expressions différentes aux
+naissances de **2000 à 2009**. Un `FormulaSet` regroupe les 7 `MathFunction` d'une tranche.
+
+Il y a exactement **deux jeux**, tous deux posés par migration :
+
+| Jeu | Tranche | S'applique à |
+|---|---|---|
+| `formulaset_defaut` | `yearFrom`/`yearTo` à `null` | toutes les années non couvertes |
+| `formulaset_annees_2000` | 2000-2009, **bornes incluses** | le cas particulier du client |
+
+Un jeu est toujours **complet** : ses 7 positions existent, celles du jeu 2000-2009 ayant été
+initialisées avec les expressions du jeu par défaut. Pas de repli formule par formule, ce qui
+évite d'avoir à deviner d'où vient une expression.
+
+⚠️ Les jeux **ne se créent ni ne se suppriment depuis l'application** : `/admin/formules` ne
+permet que d'éditer les expressions. Un futur cas particulier se traite par une migration
+(voir `20260821130000_jeu_annees_2000`), pas en confiant à l'administrateur une gestion de
+tranches qu'il n'utiliserait qu'une fois tous les deux ans.
+
+La règle de sélection vit dans `lib/computeFunctions/formulaSets.ts`, sans dépendance à Prisma :
+elle se teste avec des objets littéraux. Une tranche l'emporte toujours sur le jeu par défaut.
+
+Le banc d'essai de `/admin/formules` applique le jeu correspondant à **l'année saisie**, pas celui
+en cours d'édition, et l'affiche : c'est le seul moyen de vérifier qu'une tranche prend le relais.
 
 L'évaluation passe par un **évaluateur maison** (`lib/computeFunctions/evaluateExpression.ts`) :
 tokenizer puis descente récursive sur une grammaire volontairement minimale (arithmétique,
@@ -272,6 +298,16 @@ Variables disponibles à partir de la date de naissance :
 Les variables sont passées dans une **portée explicite**, pas substituées textuellement. La
 contrainte d'ordre de l'ancienne implémentation (remplacer `a5` avant `a1`) n'existe plus : on
 peut ajouter une variable dont le nom préfixe une autre sans rien casser.
+
+Les variables d'un seul chiffre peuvent être **accolées** pour former un nombre : pour une
+naissance le 04/07/1993, `a3a4` vaut 93 et `j2m1` vaut 40. La liste des variables juxtaposables
+est déclarée dans `CONCATENABLE_VARIABLES` (`lib/computeFunctions/computeFunctions.ts`) et se
+limite à `j1 j2 m1 m2 a1 a2 a3 a4`.
+
+⚠️ `j3`, `m3` et `a5` en sont **exclus à dessein** : ils portent des valeurs complètes dont la
+longueur varie d'une date à l'autre. `m3m3` vaudrait 77 en juillet et 1010 en octobre — une
+formule dont le sens dépendrait de la personne. La liste est statique, jamais déduite des valeurs,
+pour cette raison précise.
 
 `evaluateForceNumber()` vérifie en plus que le résultat est un **entier de 0 à 99**. Hors de ces
 bornes, la génération échoue avec un message nommant la formule fautive — jamais d'arrondi ou de
@@ -472,6 +508,10 @@ npx tsx prisma/seed.ts                        # seed du compte admin
 
 # renumérotation 1-100 → 0-99 des forces déjà en base (une seule fois, --dry-run pour voir)
 npx tsx prisma/renumber-forces-zero-based.ts --dry-run
+
+# jeux de formules par tranche d'années : migration à appliquer avant tout
+npx prisma migrate deploy                     # dev
+npm run migrate:postgres                      # prod (.env.production)
 
 # aperçu d'un livrable avec des données factices, sans base ni S3 — sert au calage
 npx tsx scripts/preview-livrable.ts freemium|livrable1|livrable2 [sortie.pdf]

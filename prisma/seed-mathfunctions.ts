@@ -19,13 +19,24 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { PLACEHOLDER_EXPRESSIONS } from "./mathFunctionPlaceholders";
+import { DEFAULT_FORMULA_SET_ID } from "../lib/computeFunctions/formulaSets";
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log("Seed des formules mathématiques...");
 
-  const existingCount = await prisma.mathFunction.count();
+  // Le jeu par défaut est créé par la migration ; on le rétablit ici pour que le
+  // script reste utilisable sur une base repartie de zéro.
+  await prisma.formulaSet.upsert({
+    where: { id: DEFAULT_FORMULA_SET_ID },
+    update: {},
+    create: { id: DEFAULT_FORMULA_SET_ID, label: "Défaut", yearFrom: null, yearTo: null },
+  });
+
+  const existingCount = await prisma.mathFunction.count({
+    where: { setId: DEFAULT_FORMULA_SET_ID },
+  });
   if (existingCount > 0) {
     console.log(`  ${existingCount} formule(s) déjà présente(s) — seed ignoré.`);
     return;
@@ -33,6 +44,7 @@ async function main() {
 
   await prisma.mathFunction.createMany({
     data: PLACEHOLDER_EXPRESSIONS.map((expression, index) => ({
+      setId: DEFAULT_FORMULA_SET_ID,
       number: index + 1,
       expression,
     })),

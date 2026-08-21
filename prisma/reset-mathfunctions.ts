@@ -13,11 +13,23 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { PLACEHOLDER_EXPRESSIONS } from "./mathFunctionPlaceholders";
+import { DEFAULT_FORMULA_SET_ID } from "../lib/computeFunctions/formulaSets";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  const existing = await prisma.mathFunction.findMany({ orderBy: { number: "asc" } });
+  // N'agit que sur le jeu par défaut : un jeu de tranche (2000-2009…) contient
+  // des expressions propres au client, qu'un placeholder n'a rien à écraser.
+  await prisma.formulaSet.upsert({
+    where: { id: DEFAULT_FORMULA_SET_ID },
+    update: {},
+    create: { id: DEFAULT_FORMULA_SET_ID, label: "Défaut", yearFrom: null, yearTo: null },
+  });
+
+  const existing = await prisma.mathFunction.findMany({
+    where: { setId: DEFAULT_FORMULA_SET_ID },
+    orderBy: { number: "asc" },
+  });
 
   console.log("Expressions actuellement en base :");
   if (existing.length === 0) {
@@ -31,9 +43,9 @@ async function main() {
   for (const [index, expression] of PLACEHOLDER_EXPRESSIONS.entries()) {
     const number = index + 1;
     await prisma.mathFunction.upsert({
-      where: { number },
+      where: { setId_number: { setId: DEFAULT_FORMULA_SET_ID, number } },
       update: { expression },
-      create: { number, expression },
+      create: { setId: DEFAULT_FORMULA_SET_ID, number, expression },
     });
     console.log(`  ${number}. ${expression}`);
   }

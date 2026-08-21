@@ -11,6 +11,7 @@ import {
   FormulaError,
 } from "@/lib/computeFunctions/computeFunctions";
 import { type DeliverableId, type PdfData, type PdfForce } from "@/types/pdf";
+import { describeRange, selectFormulaSet } from "@/lib/computeFunctions/formulaSets";
 import { ROLE_COUNT, roleOverlayText } from "@/lib/forces/roles";
 import { forceNumberSchema } from "@/lib/forces/forceAssets";
 import { getAuthSession } from "@/lib/auth-utils/getAuthSession";
@@ -50,14 +51,30 @@ const requestSchema = z.object({
 });
 
 /// Calcule les 7 numéros de force à partir de la date de naissance et des formules.
+///
+/// Le jeu de formules dépend de l'année de naissance : le client applique des
+/// expressions différentes à certaines tranches, la première étant 2000-2009.
 async function computeForceNumbers(birthDate: string): Promise<number[]> {
-  const variables = buildBirthVariables(new Date(birthDate));
+  const date = new Date(birthDate);
+  const variables = buildBirthVariables(date);
 
-  const formulas = await prisma.mathFunction.findMany({ orderBy: { number: "asc" } });
+  const sets = await prisma.formulaSet.findMany({
+    include: { functions: { orderBy: { number: "asc" } } },
+  });
+
+  if (sets.length === 0) {
+    throw new BusinessError(
+      "Aucun jeu de formules n'est enregistré. Complétez-les depuis /admin/formules."
+    );
+  }
+
+  const set = selectFormulaSet(sets, date.getFullYear());
+  const formulas = set.functions;
 
   if (formulas.length !== ROLE_COUNT) {
     throw new BusinessError(
-      `${ROLE_COUNT} formules sont attendues, ${formulas.length} sont enregistrées. ` +
+      `${ROLE_COUNT} formules sont attendues pour le jeu « ${set.label} » ` +
+        `(${describeRange(set)}), ${formulas.length} sont enregistrées. ` +
         `Complétez-les depuis /admin/formules.`
     );
   }
