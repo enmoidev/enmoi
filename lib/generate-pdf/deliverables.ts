@@ -96,8 +96,10 @@ export const DELIVERABLES: Readonly<Record<DeliverableId, Deliverable>> = {
     after: [{ asset: "livrable1/21-mon-evolution.png" }],
   },
 
-  // 35 pages : 6 d'introduction, les 7 fiches (7 à 20), puis la méthode
-  // complète des 3 étapes et ses tableaux de travail (21 à 35).
+  // 34 pages : 6 d'introduction, les 7 fiches (7 à 20), puis la méthode
+  // complète des 3 étapes et ses tableaux de travail. ⚠️ Les gabarits vont
+  // jusqu'au folio 35 mais il n'y a pas de page 33 : le document en compte
+  // donc 34, avec un saut de folio à corriger (voir CLAUDE.md).
   livrable2: {
     id: "livrable2",
     label: "Livrable 2 — Formule Complète, Méthode des 3 Étapes",
@@ -109,16 +111,19 @@ export const DELIVERABLES: Readonly<Record<DeliverableId, Deliverable>> = {
       { asset: "livrable2/23-engagement.png" },
       { asset: "livrable2/24-methode-3-etapes.png" },
       { asset: "livrable2/25-etape-2.png" },
-      { asset: "livrable2/26-auto-bilan.png" },
-      { asset: "livrable2/27-tableaux-1-2.png", overlay: "milieuDeVie" },
-      { asset: "livrable2/28-etape-3.png" },
-      { asset: "livrable2/29-temoignages.png" },
-      { asset: "livrable2/30-annexe-etape-2.png" },
-      { asset: "livrable2/31-complement-etape-2.png" },
-      { asset: "livrable2/32-questions-1.png" },
-      { asset: "livrable2/33-questions-2.png" },
-      { asset: "livrable2/34-tableau-3.png", overlay: "evaluation" },
-      { asset: "livrable2/35-tableau-4.png", overlay: "planAction" },
+      // Les 47 questions, désormais étalées sur quatre pages au lieu de deux.
+      { asset: "livrable2/26-questions1.png" },
+      { asset: "livrable2/27-questions2.png" },
+      { asset: "livrable2/28-questions3.png" },
+      { asset: "livrable2/29-questions4.png" },
+      { asset: "livrable2/30-tableaux-familles.png", overlay: "milieuDeVie" },
+      { asset: "livrable2/31-auto-bilan.png" },
+      { asset: "livrable2/32-etape3.png" },
+      // ⚠️ Il manque la page 33 : les deux dernières portent les folios gravés
+      // 34 et 35, alors qu'elles arrivent en 33e et 34e position. Voir la note
+      // « Pagination du livrable 2 » dans CLAUDE.md.
+      { asset: "livrable2/34-tableau3.png", overlay: "evaluation" },
+      { asset: "livrable2/35-tableau4.png", overlay: "planAction" },
     ],
   },
 };

@@ -32,12 +32,27 @@ function formatBirthTime(time: string | undefined): string {
   return hours && minutes ? `${hours}h${minutes}` : "";
 }
 
-/// Page 1 — prénom à la suite du libellé, date et heure dans leurs blancs.
+/// Ligne « Né(e) le : » complète — la date, puis l'heure si elle est connue.
+///
+/// Le gabarit ne porte plus que le libellé : le « à ______ » a disparu de la
+/// maquette, c'est donc ici qu'il se compose. Sans heure, la ligne s'arrête
+/// après la date, sans « à » orphelin.
+///
+/// L'astérisque renvoie à la note de bas de page, toujours imprimée sur le
+/// gabarit (« *si l'heure de naissance chevauche deux jours… ») : elle ne
+/// concerne que l'heure, on ne la pose donc que lorsqu'il y en a une.
+function formatBirthLine(iso: string, time: string | undefined): string {
+  const date = formatBirthDate(iso);
+  const heure = formatBirthTime(time);
+  if (!date) return "";
+  return heure ? `${date} à ${heure}*` : date;
+}
+
+/// Page 1 — prénom et ligne de naissance, chacun à la suite de son libellé.
 function renderCover(doc: PDFKit.PDFDocument, data: PdfData) {
   const layout = COVER_LAYOUTS[data.deliverable];
   drawInBox(doc, data.firstName, layout.firstName);
-  drawInBox(doc, formatBirthDate(data.birthDate), layout.birthDate);
-  drawInBox(doc, formatBirthTime(data.birthTime), layout.birthTime);
+  drawInBox(doc, formatBirthLine(data.birthDate, data.birthTime), layout.birthLine);
 }
 
 /// Page 3 — le prénom au centre de la roue, un titre de force par pastille.

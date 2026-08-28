@@ -142,58 +142,58 @@ export const PAGE_B_SYMBOLIC_ROLE: TextBox = {
 // Page 1 — couverture
 // ---------------------------------------------------------------------------
 
-// Le gabarit porte deux lignes gravées dans le bandeau turquoise :
-//   « Je suis (prénom) : ______ »
-//   « Né(e) le : ______ à ______ (heure de naissance, si connue)* »
-// Le prénom se pose à la suite du premier libellé ; la date et l'heure se
-// centrent dans les deux blancs. Ces blancs n'ont pas la même largeur d'un
-// livrable à l'autre : les couvertures ont été composées séparément.
+// Le gabarit ne porte plus que les deux libellés, suivis d'un espace libre :
+//   « Je suis (prénom) : »
+//   « Né(e) le : »
+// Le client a retiré le « à ______ (heure de naissance, si connue)* » qui suivait
+// la date : l'heure est désormais composée avec elle, et n'apparaît que si elle
+// est connue. Les valeurs se posent donc à la suite de leur libellé, alignées à
+// gauche, plutôt que centrées dans un blanc de largeur fixe.
+//
+// Les trois couvertures partagent la même géométrie à deux pixels près ; on garde
+// une entrée par livrable pour pouvoir en recaler une seule si le client réédite.
 
 export type CoverLayout = {
   firstName: TextBox;
-  birthDate: TextBox;
-  birthTime: TextBox;
+  /// Date de naissance, suivie de l'heure quand elle est connue.
+  birthLine: TextBox;
 };
 
-/// Fabrique une couverture à partir des trois mesures qui changent d'un
-/// livrable à l'autre : le bord droit du libellé « Je suis (prénom) : » et le
-/// centre de chacun des deux blancs de la ligne de naissance.
-function coverLayout(
-  firstNameXPx: number,
-  dateCenterXPx: number,
-  dateWidthPx: number,
-  timeCenterXPx: number,
-  timeWidthPx: number
-): CoverLayout {
-  const value = {
-    anchor: "baseline",
-    font: "cabinMedium",
-    color: HEADER_TEXT_COLOR,
-    fontSizePt: 14,
-    minFontSizePt: 10,
-    align: "center",
-  } as const;
-
+/// Fabrique une couverture à partir des deux mesures qui changent d'un livrable
+/// à l'autre : le point où commence la valeur, juste après chaque libellé gravé.
+function coverLayout(firstNameXPx: number, birthLineXPx: number): CoverLayout {
   return {
     firstName: {
       xPx: firstNameXPx,
       yPx: 1237,
       anchor: "baseline",
-      maxWidthPx: 1150,
+      maxWidthPx: 1600,
       fontSizePt: 20,
       minFontSizePt: 12,
       font: "cabinSemiBold",
       color: HEADER_TEXT_COLOR,
     },
-    birthDate: { ...value, xPx: dateCenterXPx, yPx: 1333, maxWidthPx: dateWidthPx },
-    birthTime: { ...value, xPx: timeCenterXPx, yPx: 1333, maxWidthPx: timeWidthPx },
+    birthLine: {
+      xPx: birthLineXPx,
+      yPx: 1333,
+      anchor: "baseline",
+      // Jusqu'au bord droit du bandeau : « 04.07.1993 à 14h25* » y tient
+      // largement, la réduction de police ne servira qu'en cas de surprise.
+      maxWidthPx: 1900,
+      fontSizePt: 14,
+      minFontSizePt: 10,
+      font: "cabinMedium",
+      color: HEADER_TEXT_COLOR,
+    },
   };
 }
 
+// Relevés sur les gabarits : bord droit de « Je suis (prénom) : » puis de
+// « Né(e) le : », plus une chasse d'espace.
 export const COVER_LAYOUTS = {
-  freemium: coverLayout(749, 690, 330, 1030, 260),
-  livrable1: coverLayout(747, 667, 288, 992, 274),
-  livrable2: coverLayout(749, 655, 260, 958, 259),
+  freemium: coverLayout(749, 532),
+  livrable1: coverLayout(747, 529),
+  livrable2: coverLayout(749, 532),
 } as const;
 
 // ---------------------------------------------------------------------------

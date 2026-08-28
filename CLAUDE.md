@@ -38,7 +38,7 @@ distinguent par le nombre de forces développées et par ce qui suit :
 |---|---|---|---|
 | **Freemium** | 14 | 1 (position 1) | Introduction à la méthode des 3 étapes (p. 9-14) |
 | **Livrable 1** — Formule Découverte, Étape 1 | 21 | 7 | « Mon évolution » (p. 21) |
-| **Livrable 2** — Formule Complète, Méthode des 3 Étapes | 35 | 7 | Méthode complète et tableaux de travail (p. 21-35) |
+| **Livrable 2** — Formule Complète, Méthode des 3 Étapes | 34 | 7 | Méthode complète et tableaux de travail (p. 21…) |
 
 Les 7 forces sont **toujours** calculées et nommées, même en freemium : la roue de la page 3
 les liste toutes. Seul le nombre de fiches développées change — d'où un seul appel S3 pour le
@@ -51,7 +51,7 @@ Structure commune (pagination du client) :
 
 | Page | Contenu | Surimpression |
 |---|---|---|
-| 1 | Couverture, propre au livrable | prénom, date et heure de naissance |
+| 1 | Couverture, propre au livrable | prénom, puis date et heure de naissance |
 | 2 | Page blanche (folio dans le livrable 2) | — |
 | 3 | Roue « Ma personnalité innée » | prénom au centre, les 7 titres dans les pastilles |
 | 4 | « Je découvre ma Personnalité Innée » | — |
@@ -60,10 +60,47 @@ Structure commune (pagination du client) :
 | 7… | 2 pages par force développée | A : prénom + position ; B : position + rôle |
 | 9 / 21 | Guide / auto-bilan (p. 9 en freemium, 21 en livrable 2) | prénom dans le bandeau ocre |
 
+La couverture ne porte plus que les libellés « Je suis (prénom) : » et « Né(e) le : », suivis
+d'un espace libre : le client a retiré de son gabarit le « à ______ (heure de naissance, si
+connue)* » qui suivait la date. La ligne se compose donc à l'exécution — `04.07.1993`, ou
+`04.07.1993 à 14h25*` quand l'heure est connue. Sans heure, la ligne s'arrête après la date,
+sans « à » orphelin ; l'astérisque, qui renvoie à la note de bas de page toujours imprimée sur
+le gabarit, n'est posé qu'avec l'heure.
+
+Vérifier les deux cas d'un coup :
+
+```bash
+npx tsx scripts/preview-livrable.ts freemium apercu.pdf            # avec heure
+HEURE="" npx tsx scripts/preview-livrable.ts freemium apercu.pdf   # sans heure
+```
+
 Dans le livrable 2, trois tableaux de travail reçoivent aussi les 7 titres de force :
-pages 27 (tableaux 1 & 2), 34 (tableau 3) et 35 (tableau 4). Leurs champs « Mon Prénom » et
+`30-tableaux-familles` (tableaux 1 & 2), `34-tableau3` et `35-tableau4`. Leurs champs « Mon Prénom » et
 « Date » restent **volontairement vides** : ce sont des lignes que la personne remplit à la main.
 La colonne des forces est la seule qu'elle ne peut pas deviner, donc la seule pré-remplie.
+
+### ⚠️ Pagination du livrable 2 — page 33 manquante
+
+Le client a refondu le livrable 2 le 28/08/2026 : suppression de l'annexe, questions étalées sur
+quatre pages au lieu de deux, corrections de coquilles. Les anciens gabarits ont été remplacés
+dans `public/pdf-design/livrable2/`.
+
+Il en résulte un **trou de pagination** : les gabarits vont de 21 à 32, puis sautent à 34 et 35.
+Aucun fichier ne porte le numéro 33.
+
+Le document assemblé compte donc **34 pages**, mais ses deux dernières affichent les folios
+gravés **34** et **35** alors qu'elles arrivent en 33ᵉ et 34ᵉ position. Le lecteur voit la suite
+« … 31, 32, 34, 35 ».
+
+Deux issues, au choix du client :
+
+- il **manque réellement une page 33**, à livrer — le document repasse alors à 35 pages et tout
+  redevient cohérent, sans toucher au code au-delà d'une ligne dans le manifeste ;
+- il n'y a **plus de page 33**, et il faut alors des exports renumérotés **33** et **34** pour les
+  deux tableaux finaux.
+
+Ne pas renommer les fichiers pour combler le trou : le folio est gravé **dans l'image**, le
+renommage ne ferait que déplacer l'incohérence.
 
 ### Changement majeur sur le PDF
 
@@ -362,7 +399,7 @@ Dettes restantes :
   production.
 
 ⚠️ **Le temps de génération est à mesurer en production.** Le livrable 2 est le cas le plus lourd :
-35 pages et 14 lectures S3. `maxDuration` est fixé à 60 s dans `app/api/pdf/route.ts`. Si la marge
+34 pages et 14 lectures S3. `maxDuration` est fixé à 60 s dans `app/api/pdf/route.ts`. Si la marge
 se révèle trop courte, basculer sur une génération asynchrone.
 
 ## Modèle Force (migration faite)

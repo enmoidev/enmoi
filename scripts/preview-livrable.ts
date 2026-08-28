@@ -83,7 +83,8 @@ async function main() {
     lastName: "Petit",
     birthPlace: "Marseille",
     birthDate: "1993-07-04",
-    birthTime: "14:25",
+    // HEURE="" pour vérifier le rendu sans heure de naissance.
+    birthTime: process.env.HEURE ?? "14:25",
     forces: FORCE_ROLES.map((_, index) => ({
       number: index + 1,
       title: SAMPLE_TITLES[index],
