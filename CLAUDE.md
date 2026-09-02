@@ -317,26 +317,40 @@ Les expressions sont stockées en base et éditables depuis `/admin/formules`.
 ### Jeux de formules par tranche d'années
 
 Les 7 formules ne sont pas universelles : le client applique des expressions différentes aux
-naissances de **2000 à 2009**. Un `FormulaSet` regroupe les 7 `MathFunction` d'une tranche.
+naissances des années 2000, et **l'an 2000 lui-même se distingue** des années 2001 à 2009. Un
+`FormulaSet` regroupe les 7 `MathFunction` d'une tranche.
 
-Il y a exactement **deux jeux**, tous deux posés par migration :
+Il y a exactement **trois jeux**, tous posés par migration :
 
 | Jeu | Tranche | S'applique à |
 |---|---|---|
 | `formulaset_defaut` | `yearFrom`/`yearTo` à `null` | toutes les années non couvertes |
-| `formulaset_annees_2000` | 2000-2009, **bornes incluses** | le cas particulier du client |
+| `formulaset_annee_2000_seule` | 2000-2000 | l'an 2000, qui a ses propres formules |
+| `formulaset_annees_2000` | 2001-2009, **bornes incluses** | le reste de la décennie |
 
-Un jeu est toujours **complet** : ses 7 positions existent, celles du jeu 2000-2009 ayant été
-initialisées avec les expressions du jeu par défaut. Pas de repli formule par formule, ce qui
+⚠️ L'identifiant `formulaset_annees_2000` couvre **2001-2009** depuis
+`20260902160000_jeu_annee_2000` : il a été conservé pour ne pas déplacer les 7 `math_function` qui
+s'y rattachent — et avec elles les expressions déjà saisies. Son libellé, lui, dit la bonne
+tranche ; c'est le seul texte que l'administrateur lit.
+
+Un jeu est toujours **complet** : ses 7 positions existent. Le jeu 2001-2009 a été initialisé avec
+les expressions du jeu par défaut, et celui de l'an 2000 avec celles du jeu 2001-2009 dont il se
+détache — les naissances de 2000 gardent donc exactement le comportement qu'elles avaient avant,
+jusqu'à ce que l'administrateur saisisse ce qui diffère. Pas de repli formule par formule, ce qui
 évite d'avoir à deviner d'où vient une expression.
 
 ⚠️ Les jeux **ne se créent ni ne se suppriment depuis l'application** : `/admin/formules` ne
 permet que d'éditer les expressions. Un futur cas particulier se traite par une migration
-(voir `20260821130000_jeu_annees_2000`), pas en confiant à l'administrateur une gestion de
-tranches qu'il n'utiliserait qu'une fois tous les deux ans.
+(voir `20260821130000_jeu_annees_2000` puis `20260902160000_jeu_annee_2000`), pas en confiant à
+l'administrateur une gestion de tranches qu'il n'utiliserait qu'une fois tous les deux ans.
+
+Ni la règle de sélection, ni l'API, ni l'écran d'édition ne supposent un nombre de jeux : une
+tranche de plus est une ligne de migration, l'onglet correspondant apparaît tout seul.
 
 La règle de sélection vit dans `lib/computeFunctions/formulaSets.ts`, sans dépendance à Prisma :
-elle se teste avec des objets littéraux. Une tranche l'emporte toujours sur le jeu par défaut.
+elle se teste avec des objets littéraux. Une tranche l'emporte toujours sur le jeu par défaut, et
+la **plus étroite** l'emporte entre deux tranches qui se recouvriraient — ce qui rend le cas de
+l'an 2000 correct même si quelqu'un rouvrait la tranche voisine à 2000.
 
 Le banc d'essai de `/admin/formules` applique le jeu correspondant à **l'année saisie**, pas celui
 en cours d'édition, et l'affiche : c'est le seul moyen de vérifier qu'une tranche prend le relais.

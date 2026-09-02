@@ -40,9 +40,9 @@ export function describeRange(set: YearRange): string {
 
 /// Le jeu couvre-t-il cette année de naissance ?
 ///
-/// Les bornes sont **incluses** des deux côtés : la tranche 2000-2009 couvre
-/// bien les naissances de 2000 et de 2009. Une borne absente ne limite pas
-/// ce côté-là.
+/// Les bornes sont **incluses** des deux côtés : la tranche 2001-2009 couvre
+/// bien les naissances de 2001 et de 2009, et la tranche 2000-2000 la seule
+/// année 2000. Une borne absente ne limite pas ce côté-là.
 function covers(set: YearRange, year: number): boolean {
   if (isDefaultSet(set)) return false;
   if (set.yearFrom !== null && year < set.yearFrom) return false;

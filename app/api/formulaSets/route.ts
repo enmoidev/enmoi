@@ -1,10 +1,13 @@
 // Jeux de formules — liste
 //
 // Les jeux ne se créent ni ne se suppriment depuis l'application : ils sont
-// posés par migration. Il y en a deux, le jeu par défaut et celui des naissances
-// 2000-2009, seul cas particulier connu. Un futur cas se traitera de la même
-// façon — une migration — plutôt qu'en confiant à l'administrateur une gestion
-// de tranches qu'il n'aurait à utiliser qu'une fois tous les deux ans.
+// posés par migration. Il y en a trois — le jeu par défaut, celui de l'année
+// 2000 seule, et celui des naissances 2001-2009. Un futur cas se traitera de la
+// même façon — une migration — plutôt qu'en confiant à l'administrateur une
+// gestion de tranches qu'il n'aurait à utiliser qu'une fois tous les deux ans.
+//
+// Cette route ne suppose aucun nombre de jeux : elle renvoie ce que la base
+// contient, et l'écran d'édition affiche un onglet par jeu.
 //
 // Seules les expressions sont modifiables, via /api/mathFunctions/[id].
 

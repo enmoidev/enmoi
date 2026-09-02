@@ -18,7 +18,7 @@ import { DEFAULT_FORMULA_SET_ID } from "../lib/computeFunctions/formulaSets";
 const prisma = new PrismaClient();
 
 async function main() {
-  // N'agit que sur le jeu par défaut : un jeu de tranche (2000-2009…) contient
+  // N'agit que sur le jeu par défaut : un jeu de tranche (2000, 2001-2009…) contient
   // des expressions propres au client, qu'un placeholder n'a rien à écraser.
   await prisma.formulaSet.upsert({
     where: { id: DEFAULT_FORMULA_SET_ID },

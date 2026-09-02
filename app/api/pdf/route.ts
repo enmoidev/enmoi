@@ -53,7 +53,7 @@ const requestSchema = z.object({
 /// Calcule les 7 numéros de force à partir de la date de naissance et des formules.
 ///
 /// Le jeu de formules dépend de l'année de naissance : le client applique des
-/// expressions différentes à certaines tranches, la première étant 2000-2009.
+/// expressions différentes à certaines tranches : l'an 2000, puis 2001-2009.
 async function computeForceNumbers(birthDate: string): Promise<number[]> {
   const date = new Date(birthDate);
   const variables = buildBirthVariables(date);
