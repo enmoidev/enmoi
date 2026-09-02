@@ -262,14 +262,28 @@ export const OCHRE_BAND_FIRST_NAME: TextBox = {
   color: INK_COLOR,
 };
 
+/// Livrable 1, page 21 — « Mon évolution ».
+///
+/// Même bandeau ocre, même position : seule la largeur disponible change. Le
+/// titre « Mon évolution » est gravé au milieu du bandeau, de 921 à 1551 px ;
+/// la zone du prénom s'arrête donc avant lui, au lieu de courir sur 900 px.
+export const MON_EVOLUTION_FIRST_NAME: TextBox = {
+  ...OCHRE_BAND_FIRST_NAME,
+  maxWidthPx: 640,
+};
+
 // ---------------------------------------------------------------------------
 // Livrable 2 — tableaux de travail (pages 27, 34 et 35)
 // ---------------------------------------------------------------------------
 
 // Ces trois pages sont des tableaux à remplir par la personne. Le livrable y
-// pré-remplit son identité et la colonne « Mes Forces Mentales » ; tout le reste
-// se remplit à la main. Les centres de colonne viennent de la détection des
-// filets verticaux dans les PNG, les lignes de base du PDF de référence.
+// pré-remplit le prénom et la colonne « Mes Forces Mentales » ; tout le reste se
+// remplit à la main. Les centres de colonne viennent de la détection des filets
+// verticaux dans les PNG, les lignes de base du PDF de référence.
+//
+// La ligne « Date : » reste volontairement vide : elle date la séance de travail,
+// pas le document. La personne peut imprimer sa feuille des mois après la
+// génération, et la remplir en plusieurs fois — une date imprimée serait fausse.
 
 /// Rectangle plein posé avant le texte, pour neutraliser une zone du gabarit.
 export type MaskBox = {
@@ -281,17 +295,54 @@ export type MaskBox = {
 };
 
 export type WorksheetLayout = {
+  /// Le prénom, posé sur le filet qui suit le libellé « Mon Prénom : ».
+  firstName: TextBox;
   /// Les 7 lignes de la colonne « Mes Forces Mentales », dans l'ordre des positions.
-  ///
-  /// C'est la seule colonne pré-remplie : les champs « Mon Prénom » et « Date »
-  /// de ces pages sont des lignes à écrire à la main, pas des étiquettes à
-  /// compléter par le générateur (décision client).
   forceTitles: readonly TextBox[];
   /// Les titres sont-ils imprimés en capitales, comme sur l'exemple du client ?
   uppercase: boolean;
   /// Zones du gabarit à recouvrir avant d'écrire. Voir WORKSHEET_EVALUATION.
   masks?: readonly MaskBox[];
 };
+
+/// Champ « Mon Prénom : » d'un tableau de travail.
+///
+/// Les trois gabarits gravent le libellé puis un filet à compléter. Le prénom se
+/// pose sur ce filet : le document se lit alors comme un formulaire déjà rempli,
+/// et non comme une ligne rajoutée par-dessus.
+///
+/// Les bornes du filet et la ligne de base du libellé ont été relevées dans les
+/// PNG (détection du trait horizontal, puis du bas du « M » de « Mon »). Le
+/// Le prénom reprend la typographie qu'il a partout ailleurs dans le livrable —
+/// Gabriola 19, noir, celle du bandeau ocre des pages 5 et 9/21 : une seule
+/// écriture pour une seule valeur, quel que soit l'endroit où elle apparaît.
+/// Elle se détache d'autant mieux du libellé « Mon Prénom : », gravé en gras
+/// dans le gabarit.
+function worksheetFirstName(
+  ruleStartPx: number,
+  ruleEndPx: number,
+  labelBaselinePx: number
+): TextBox {
+  /// Retrait à gauche du filet, pour que le texte ne parte pas de son extrémité.
+  const INSET_PX = 16;
+  /// Remontée au-dessus de la ligne de base du libellé.
+  ///
+  /// Le client grave ses libellés à même le filet — 1 à 5 px les séparent. Aligner
+  /// la valeur sur cette ligne de base la collait au trait ; on la relève d'un
+  /// millimètre. L'écart avec le libellé se voit à peine, l'air sous les lettres
+  /// se voit tout de suite.
+  const LIFT_PX = 12;
+  return {
+    xPx: ruleStartPx + INSET_PX,
+    yPx: labelBaselinePx - LIFT_PX,
+    anchor: "baseline",
+    maxWidthPx: ruleEndPx - ruleStartPx - 2 * INSET_PX,
+    fontSizePt: 19,
+    minFontSizePt: 12,
+    font: "gabriola",
+    color: INK_COLOR,
+  };
+}
 
 /// Construit les 7 lignes d'une colonne de tableau à pas régulier.
 function columnRows(
@@ -318,6 +369,7 @@ function columnRows(
 /// Le titre de force est centré sur le groupe de trois lignes
 /// (Valorisation / Dévalorisation / Neutre), donc sur celle du milieu.
 export const WORKSHEET_MILIEU_DE_VIE: WorksheetLayout = {
+  firstName: worksheetFirstName(570, 1099, 368),
   forceTitles: columnRows(306, 472, 1912, 236.4, 9),
   uppercase: false,
 };
@@ -335,6 +387,7 @@ export const WORKSHEET_MILIEU_DE_VIE: WorksheetLayout = {
 /// redessiner les cases — c'est un export propre à redemander au client. Une
 /// fois livré, supprimer `masks`.
 export const WORKSHEET_EVALUATION: WorksheetLayout = {
+  firstName: worksheetFirstName(547, 1062, 716),
   forceTitles: columnRows(512, 803, 1772, 259.83, 11),
   uppercase: true,
   masks: [
@@ -346,6 +399,7 @@ export const WORKSHEET_EVALUATION: WorksheetLayout = {
 
 /// Page 35 — tableau 4, « Plan d'action ».
 export const WORKSHEET_PLAN_ACTION: WorksheetLayout = {
+  firstName: worksheetFirstName(358, 874, 858),
   forceTitles: columnRows(512, 803, 1742, 260, 11),
   uppercase: true,
 };

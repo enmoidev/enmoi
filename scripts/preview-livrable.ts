@@ -15,11 +15,22 @@
 //
 //   FICHE="livrable-png/05 - forces/V6-Lot 1/1-La-Créative audacieuse" \
 //     npx tsx scripts/preview-livrable.ts livrable1
+//
+// PRENOM et HEURE remplacent les deux valeurs qui font varier la mise en page :
+// un prénom long déclenche la réduction de police, une heure absente raccourcit
+// la ligne de naissance de la couverture.
+//
+// NAISSANCE et DOUBLON pilotent la variante de la roue (page 3) :
+//
+//   NAISSANCE=1993-09-04 …                 → « Natifs et natives de Septembre »
+//   DOUBLON=1 …                            → « Deux Forces Mentales identiques »
+//   NAISSANCE=1993-09-04 DOUBLON=1 …       → les deux
 
 import fs from "fs";
 import path from "path";
 import { generatePdf } from "@/lib/generate-pdf/generatePdf";
 import { DELIVERABLES, pageCount } from "@/lib/generate-pdf/deliverables";
+import { wheelVariant } from "@/lib/generate-pdf/wheelVariant";
 import { FORCE_ROLES, roleOverlayText } from "@/lib/forces/roles";
 import type { DeliverableId, PdfData } from "@/types/pdf";
 
@@ -79,20 +90,26 @@ async function main() {
 
   const data: PdfData = {
     deliverable: deliverableId,
-    firstName: "Sébastien",
+    // PRENOM="Marie-Christelle" pour vérifier la réduction sur un prénom long.
+    firstName: process.env.PRENOM || "Sébastien",
     lastName: "Petit",
     birthPlace: "Marseille",
-    birthDate: "1993-07-04",
+    // NAISSANCE=1993-09-04 pour la variante « septembre » de la page 3.
+    birthDate: process.env.NAISSANCE || "1993-07-04",
     // HEURE="" pour vérifier le rendu sans heure de naissance.
     birthTime: process.env.HEURE ?? "14:25",
     forces: FORCE_ROLES.map((_, index) => ({
-      number: index + 1,
+      // DOUBLON=1 fait porter le même numéro aux positions 1 et 3, ce qui
+      // déclenche la variante « deux Forces Mentales identiques » de la page 3.
+      number: process.env.DOUBLON && index === 2 ? 1 : index + 1,
       title: SAMPLE_TITLES[index],
       position: index + 1,
       symbolicRole: roleOverlayText(index + 1),
       sheet: index < deliverable.detailedForceCount ? sheet : undefined,
     })),
   };
+
+  console.log(`Page 3 : variante « ${wheelVariant(data)} ».`);
 
   const buffer = await generatePdf(data);
   const target = path.resolve(output ?? `apercu-${deliverableId}.pdf`);

@@ -10,6 +10,7 @@ import {
   COVER_LAYOUTS,
   WHEEL_FIRST_NAME,
   WHEEL_FORCE_TITLES,
+  MON_EVOLUTION_FIRST_NAME,
   OCHRE_BAND_FIRST_NAME,
   WORKSHEET_EVALUATION,
   WORKSHEET_MILIEU_DE_VIE,
@@ -60,6 +61,10 @@ function renderCover(doc: PDFKit.PDFDocument, data: PdfData) {
 /// Les sept pastilles portent déjà le nom du rôle : le titre vient au-dessus,
 /// dans l'ordre des positions. Une force absente laisse simplement sa pastille
 /// avec le seul nom de rôle, ce que le gabarit prévoit.
+///
+/// La page existe en quatre versions (wheelVariant.ts), qui ne diffèrent que par
+/// le texte imprimé sous le schéma : la roue y est au même endroit au pixel
+/// près, une seule table de coordonnées suffit donc pour les quatre.
 function renderWheel(doc: PDFKit.PDFDocument, data: PdfData) {
   drawInBox(doc, data.firstName, WHEEL_FIRST_NAME);
 
@@ -74,13 +79,20 @@ function renderOchreBand(doc: PDFKit.PDFDocument, data: PdfData) {
   drawInBox(doc, data.firstName, OCHRE_BAND_FIRST_NAME);
 }
 
-/// Tableaux de travail du livrable 2 : la seule colonne des forces.
-/// Les champs « Mon Prénom » et « Date » de ces pages restent vides : ce sont
-/// des lignes que la personne remplit elle-même.
+/// Livrable 1, page 21 — même prénom, même bandeau, zone plus étroite : le
+/// titre « Mon évolution » est gravé au milieu.
+function renderMonEvolution(doc: PDFKit.PDFDocument, data: PdfData) {
+  drawInBox(doc, data.firstName, MON_EVOLUTION_FIRST_NAME);
+}
+
+/// Tableaux de travail du livrable 2 : le prénom et la colonne des forces.
+/// Le champ « Date » reste vide — il date la séance de travail, pas le document.
 function renderWorksheet(doc: PDFKit.PDFDocument, data: PdfData, layout: WorksheetLayout) {
   // Les masques d'abord : ils recouvrent un reste d'exemple du gabarit, et le
   // texte qui suit doit passer par-dessus.
   layout.masks?.forEach((mask) => drawMask(doc, mask));
+
+  drawInBox(doc, data.firstName, layout.firstName);
 
   for (const force of data.forces) {
     const box = layout.forceTitles[force.position - 1];
@@ -98,6 +110,8 @@ export function applyOverlay(doc: PDFKit.PDFDocument, overlay: PageOverlay, data
       return renderWheel(doc, data);
     case "ochreBand":
       return renderOchreBand(doc, data);
+    case "monEvolution":
+      return renderMonEvolution(doc, data);
     case "milieuDeVie":
       return renderWorksheet(doc, data, WORKSHEET_MILIEU_DE_VIE);
     case "evaluation":

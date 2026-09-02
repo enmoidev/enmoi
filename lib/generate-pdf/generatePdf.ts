@@ -3,7 +3,7 @@
 import PDFDocument from "pdfkit";
 import type { PdfData } from "@/types/pdf";
 import { DEFAULT_FONT_PATH, registerFonts } from "./fonts";
-import { DELIVERABLES, type DeliverablePage } from "./deliverables";
+import { DELIVERABLES, pageAsset, type DeliverablePage } from "./deliverables";
 import { drawFullPageDesign } from "./designAssets";
 import { applyOverlay } from "./renderOverlays";
 import { renderForcePages } from "./renderForcePages";
@@ -30,7 +30,7 @@ export async function generatePdf(data: PdfData): Promise<Buffer> {
 
   const drawPage = (page: DeliverablePage) => {
     doc.addPage();
-    drawFullPageDesign(doc, page.asset);
+    drawFullPageDesign(doc, pageAsset(page, data));
     if (page.overlay) applyOverlay(doc, page.overlay, data);
   };
 

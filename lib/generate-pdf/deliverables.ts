@@ -10,7 +10,8 @@
 // contient qu'une fiche d'exemple ; en production ses 7 fiches occupent les
 // pages 7 à 20 et « Mon évolution » tombe donc en page 21.
 
-import type { DeliverableId } from "@/types/pdf";
+import type { DeliverableId, PdfData } from "@/types/pdf";
+import { wheelAsset } from "./wheelVariant";
 
 /// Les surimpressions possibles sur une page de gabarit.
 /// Les coordonnées de chacune vivent dans overlayLayout.ts.
@@ -22,16 +23,23 @@ export type PageOverlay =
   /// Page à bandeau ocre (citation, guide / auto-bilan) : le prénom seul, en
   /// haut à gauche du bandeau.
   | "ochreBand"
-  /// Livrable 2, tableaux 1 & 2 : prénom, date du jour, les 7 titres.
+  /// Livrable 1, page 21 « Mon évolution » : le même prénom au même endroit,
+  /// mais sur un bandeau dont le titre occupe le milieu.
+  | "monEvolution"
+  /// Livrable 2, tableaux 1 & 2 : le prénom et les 7 titres.
   | "milieuDeVie"
-  /// Livrable 2, tableau 3 : prénom, date du jour, les 7 titres en capitales.
+  /// Livrable 2, tableau 3 : le prénom et les 7 titres, en capitales.
   | "evaluation"
-  /// Livrable 2, tableau 4 : prénom, date du jour, les 7 titres en capitales.
+  /// Livrable 2, tableau 4 : le prénom et les 7 titres, en capitales.
   | "planAction";
 
 export type DeliverablePage = {
   /// Chemin du gabarit, relatif à public/pdf-design/.
-  asset: string;
+  ///
+  /// Une fonction quand le gabarit dépend de la personne : la page 3 existe en
+  /// quatre versions selon les particularités du tirage (voir wheelVariant.ts).
+  /// C'est la seule page dans ce cas ; tout le reste est déclaré en dur.
+  asset: string | ((data: PdfData) => string);
   /// Surimpression à appliquer. Absent = page entièrement composée par le client.
   overlay?: PageOverlay;
 };
@@ -61,7 +69,7 @@ function introPages(dir: string): DeliverablePage[] {
   return [
     { asset: `${dir}/01-couverture.png`, overlay: "cover" },
     { asset: `${dir}/02-vierge.png` },
-    { asset: "commun/03-roue.png", overlay: "wheel" },
+    { asset: wheelAsset, overlay: "wheel" },
     { asset: "commun/04-je-decouvre.png" },
     { asset: "commun/05-citation.png", overlay: "ochreBand" },
     { asset: "commun/06-fiche-explicative.png" },
@@ -93,7 +101,7 @@ export const DELIVERABLES: Readonly<Record<DeliverableId, Deliverable>> = {
     label: "Livrable 1 — Formule Découverte, Étape 1",
     detailedForceCount: 7,
     before: introPages("livrable1"),
-    after: [{ asset: "livrable1/21-mon-evolution.png" }],
+    after: [{ asset: "livrable1/21-mon-evolution.png", overlay: "monEvolution" }],
   },
 
   // 35 pages : 6 d'introduction, les 7 fiches (7 à 20), puis la méthode
@@ -125,6 +133,11 @@ export const DELIVERABLES: Readonly<Record<DeliverableId, Deliverable>> = {
 };
 
 export const DELIVERABLE_IDS = Object.keys(DELIVERABLES) as DeliverableId[];
+
+/// Le gabarit d'une page pour une personne donnée.
+export function pageAsset(page: DeliverablePage, data: PdfData): string {
+  return typeof page.asset === "function" ? page.asset(data) : page.asset;
+}
 
 /// Nombre total de pages d'un livrable — pour l'annoncer dans le back-office.
 export function pageCount(deliverable: Deliverable): number {

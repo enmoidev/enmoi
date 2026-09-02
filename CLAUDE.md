@@ -53,12 +53,13 @@ Structure commune (pagination du client) :
 |---|---|---|
 | 1 | Couverture, propre au livrable | prénom, puis date et heure de naissance |
 | 2 | Page blanche (folio dans le livrable 2) | — |
-| 3 | Roue « Ma personnalité innée » | prénom au centre, les 7 titres dans les pastilles |
+| 3 | Roue « Ma personnalité innée » (4 versions) | prénom au centre, les 7 titres dans les pastilles |
 | 4 | « Je découvre ma Personnalité Innée » | — |
 | 5 | Citation | prénom dans le bandeau ocre |
 | 6 | Fiche explicative — le rôle de chaque force | — |
 | 7… | 2 pages par force développée | A : prénom + position ; B : position + rôle |
 | 9 / 21 | Guide / auto-bilan (p. 9 en freemium, 21 en livrable 2) | prénom dans le bandeau ocre |
+| 21 | « Mon évolution » (livrable 1) | prénom dans le bandeau ocre, à gauche du titre |
 
 La couverture ne porte plus que les libellés « Je suis (prénom) : » et « Né(e) le : », suivis
 d'un espace libre : le client a retiré de son gabarit le « à ______ (heure de naissance, si
@@ -74,10 +75,54 @@ npx tsx scripts/preview-livrable.ts freemium apercu.pdf            # avec heure
 HEURE="" npx tsx scripts/preview-livrable.ts freemium apercu.pdf   # sans heure
 ```
 
-Dans le livrable 2, trois tableaux de travail reçoivent aussi les 7 titres de force :
-`30-tableaux-familles` (tableaux 1 & 2), `34-tableau3` et `35-tableau4`. Leurs champs « Mon Prénom » et
-« Date » restent **volontairement vides** : ce sont des lignes que la personne remplit à la main.
-La colonne des forces est la seule qu'elle ne peut pas deviner, donc la seule pré-remplie.
+Dans le livrable 2, trois tableaux de travail reçoivent aussi le **prénom** et les 7 titres de
+force : `30-tableaux-familles` (tableaux 1 & 2), `34-tableau3` et `35-tableau4`. Le prénom se pose
+sur le filet qui suit le libellé « Mon Prénom : », en **Gabriola 19 noir** — la même écriture que
+dans les bandeaux ocre : une seule typographie pour le prénom, quel que soit l'endroit du document
+où il apparaît. Il est relevé d'un millimètre au-dessus de la ligne de base du libellé : le client
+grave ses libellés à même le filet, et s'aligner dessus collait la valeur au trait.
+
+Le champ « **Date** » de ces mêmes pages reste **volontairement vide** : il date la séance de
+travail, pas le document. La personne imprime sa feuille quand elle veut et peut la remplir en
+plusieurs fois — une date de génération y serait fausse.
+
+### Les quatre versions de la page 3
+
+La roue existe en quatre gabarits, qui commentent une particularité du tirage sous le schéma :
+
+| Variante | Gabarit | Déclencheur |
+|---|---|---|
+| `base` | `commun/03-roue.png` | aucune particularité |
+| `forcesIdentiques` | `commun/03-roue-forces-identiques.png` | deux des 7 positions désignent la même force |
+| `septembre` | `commun/03-roue-septembre.png` | naissance en septembre |
+| `forcesIdentiquesEtSeptembre` | `commun/03-roue-forces-identiques-et-septembre.png` | les deux |
+
+Les deux critères se calculent **entièrement à partir des données déjà présentes** — les 7 numéros
+de force et la date de naissance. Rien à saisir dans le back-office, rien à stocker en base. La
+règle vit dans `lib/generate-pdf/wheelVariant.ts`, sans dépendance à Prisma : elle se teste avec
+des objets littéraux.
+
+Le doublon se juge sur le **numéro** de la force (0 à 99), jamais sur son titre : deux forces
+distinctes peuvent partager un titre provisoire tant que le client n'a pas livré ses 100 visuels.
+
+La roue est au même endroit au pixel près dans les quatre gabarits (vérifié par superposition) :
+une seule table de coordonnées sert aux quatre, et les quatre versions valent pour les trois
+livrables, la page 3 venant de `introPages()`.
+
+C'est la **seule page dont le gabarit dépend de la personne**. Pour la porter, le champ `asset` de
+`DeliverablePage` accepte, en plus d'une chaîne, une fonction de `PdfData` ; `pageAsset()` la
+résout au moment de dérouler le manifeste. Tout le reste reste déclaré en dur.
+
+Les quatre cas se vérifient d'un coup :
+
+```bash
+npx tsx scripts/preview-livrable.ts freemium                             # base
+DOUBLON=1 npx tsx scripts/preview-livrable.ts freemium                   # forces identiques
+NAISSANCE=1993-09-04 npx tsx scripts/preview-livrable.ts freemium        # septembre
+NAISSANCE=1993-09-04 DOUBLON=1 npx tsx scripts/preview-livrable.ts freemium   # les deux
+```
+
+Le script annonce la variante retenue avant d'écrire le document.
 
 ### Changement majeur sur le PDF
 
@@ -126,6 +171,8 @@ d'intervalle est redondant.
 | Page 3 — prénom | Gabriola Regular | 19 | noir |
 | Page 3 — titres de force | Cabin Bold | 10 | noir |
 | Pages 5 et 9/21 — prénom | Gabriola Regular | 19 | noir |
+| Livrable 1, page 21 — prénom | Gabriola Regular | 19 | noir |
+| Tableaux de travail — prénom | Gabriola Regular | 19 | noir |
 
 Toutes les coordonnées vivent dans **`lib/generate-pdf/overlayLayout.ts`**, et nulle part ailleurs.
 Elles sont exprimées en **pixels du visuel source** (2480 × 3508), donc relevables directement dans
@@ -204,6 +251,7 @@ lib/
   storage/                    interface ObjectStorage + adaptateurs S3 / local
   generate-pdf/               assemblage des livrables
     deliverables.ts           ⭐ composition des 3 livrables, page par page
+    wheelVariant.ts           les 4 versions de la page 3, et laquelle s'applique
     overlayLayout.ts          ⭐ toutes les coordonnées de surimpression
     generatePdf.ts            déroule le manifeste
     renderOverlays.ts         surimpressions des pages d'introduction et des tableaux
