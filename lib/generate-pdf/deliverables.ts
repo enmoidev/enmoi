@@ -151,15 +151,41 @@ export function pageAsset(page: DeliverablePage, data: PdfData): string {
   return typeof page.asset === "function" ? page.asset(data) : page.asset;
 }
 
+/// Réduit un nom à des caractères sûrs pour un nom de fichier.
+///
+/// Les accents sont **translittérés**, jamais remplacés : « Sébastien » donne
+/// « Sebastien », et non « S_bastien ». La décomposition Unicode (NFD) sépare
+/// chaque lettre de son accent, qu'il ne reste plus qu'à retirer — ce qui couvre
+/// d'un coup é, è, ê, ë, ï, ô, ù, ç… sans table de correspondance à tenir.
+///
+/// Les ligatures échappent à NFD, qui ne les décompose pas : elles sont donc
+/// traitées avant. Tout le reste — espaces, apostrophes, points — devient un
+/// trait d'union, ce qui préserve « Marie-Charlotte » tel quel et rend
+/// « D'Artagnan » lisible.
+function asciiName(name: string): string {
+  return name
+    .replace(/œ/g, "oe")
+    .replace(/Œ/g, "OE")
+    .replace(/æ/g, "ae")
+    .replace(/Æ/g, "AE")
+    .normalize("NFD")
+    // Bloc des diacritiques combinants, ce que NFD vient de détacher.
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Za-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 /// Nom du fichier téléchargé pour une personne.
-/// Les caractères hors [A-Za-z0-9_.-] sont remplacés : un prénom accentué ou
-/// composé ne doit pas produire un nom de fichier bancal.
+///
+/// Un nom vide est simplement omis plutôt que de laisser un séparateur
+/// orphelin : la génération de test se fait parfois sans état civil complet.
 export function pdfFileName(
   deliverable: Deliverable,
   firstName: string,
   lastName: string
 ): string {
-  return `${deliverable.fileSlug}_${firstName}_${lastName}.pdf`.replace(/[^\w.-]/g, "_");
+  const parts = [deliverable.fileSlug, asciiName(firstName), asciiName(lastName)];
+  return `${parts.filter(Boolean).join("_")}.pdf`;
 }
 
 /// Nombre total de pages d'un livrable — pour l'annoncer dans le back-office.
