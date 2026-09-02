@@ -96,10 +96,8 @@ export const DELIVERABLES: Readonly<Record<DeliverableId, Deliverable>> = {
     after: [{ asset: "livrable1/21-mon-evolution.png" }],
   },
 
-  // 34 pages : 6 d'introduction, les 7 fiches (7 à 20), puis la méthode
-  // complète des 3 étapes et ses tableaux de travail. ⚠️ Les gabarits vont
-  // jusqu'au folio 35 mais il n'y a pas de page 33 : le document en compte
-  // donc 34, avec un saut de folio à corriger (voir CLAUDE.md).
+  // 35 pages : 6 d'introduction, les 7 fiches (7 à 20), puis la méthode
+  // complète des 3 étapes et ses tableaux de travail (21 à 35).
   livrable2: {
     id: "livrable2",
     label: "Livrable 2 — Formule Complète, Méthode des 3 Étapes",
@@ -119,9 +117,7 @@ export const DELIVERABLES: Readonly<Record<DeliverableId, Deliverable>> = {
       { asset: "livrable2/30-tableaux-familles.png", overlay: "milieuDeVie" },
       { asset: "livrable2/31-auto-bilan.png" },
       { asset: "livrable2/32-etape3.png" },
-      // ⚠️ Il manque la page 33 : les deux dernières portent les folios gravés
-      // 34 et 35, alors qu'elles arrivent en 33e et 34e position. Voir la note
-      // « Pagination du livrable 2 » dans CLAUDE.md.
+      { asset: "livrable2/33-temoignage.png" },
       { asset: "livrable2/34-tableau3.png", overlay: "evaluation" },
       { asset: "livrable2/35-tableau4.png", overlay: "planAction" },
     ],
