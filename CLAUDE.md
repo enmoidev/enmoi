@@ -29,23 +29,37 @@ la source unique côté code est `lib/forces/roles.ts` :
 | 6 | Ma générationnelle | Le partage commun à toute une génération |
 | 7 | Mon inspiratrice | La bonne étoile, ma boussole non-consciente |
 
-### Les trois livrables
+### Les trois versions du Miroir enMOI
 
-Le produit se décline en trois documents, qui partagent leurs six premières pages et se
-distinguent par le nombre de forces développées et par ce qui suit :
+Le document remis à la personne s'appelle le **Miroir enMOI**. Il se décline en trois versions,
+qui partagent leurs six premières pages et se distinguent par le nombre de forces développées et
+par ce qui suit :
 
-| Livrable | Pages | Forces développées | Après les fiches |
-|---|---|---|---|
-| **Freemium** | 14 | 1 (position 1) | Introduction à la méthode des 3 étapes (p. 9-14) |
-| **Livrable 1** — Formule Découverte, Étape 1 | 21 | 7 | « Mon évolution » (p. 21) |
-| **Livrable 2** — Formule Complète, Méthode des 3 Étapes | 35 | 7 | Méthode complète et tableaux de travail (p. 21-35) |
+| Version | Identifiant | Pages | Forces développées | Après les fiches |
+|---|---|---|---|---|
+| **Version offerte** | `freemium` | 14 | 1 (position 1) | Introduction à la méthode des 3 étapes (p. 9-14) |
+| **Version découverte** | `livrable1` | 21 | 7 | « Mon évolution » (p. 21) |
+| **Version complète** | `livrable2` | 35 | 7 | Méthode complète et tableaux de travail (p. 21-35) |
 
-Les 7 forces sont **toujours** calculées et nommées, même en freemium : la roue de la page 3
-les liste toutes. Seul le nombre de fiches développées change — d'où un seul appel S3 pour le
-freemium au lieu de sept.
+⚠️ **Vocabulaire.** « Miroir enMOI » et « version offerte / découverte / complète » sont les termes
+du client, arrêtés le 02/09/2026 ; ils remplacent « livrable », « freemium », « Formule Découverte »
+et « Formule Complète ». Ce sont les seuls mots à employer partout où quelqu'un les lit : interface,
+e-mails, noms de fichiers produits, documentation destinée au client.
 
-La composition de chaque livrable est déclarée dans **`lib/generate-pdf/deliverables.ts`**, et
-nulle part ailleurs. Le générateur ne fait que dérouler ce manifeste.
+Les **identifiants techniques gardent leur nom** — `DeliverableId`, `freemium` / `livrable1` /
+`livrable2`, les dossiers `public/pdf-design/livrable1|2/`, le champ `deliverable` des API. Ils ne
+s'affichent nulle part, et les renommer casserait les chemins d'assets pour un gain nul : même
+arbitrage que pour le renommage inYou → enMOI. Ce document continue donc de dire « livrable » quand
+il parle de code, « version » quand il parle du produit.
+
+Les 7 forces sont **toujours** calculées et nommées, même dans la version offerte : la roue de la
+page 3 les liste toutes. Seul le nombre de fiches développées change — d'où un seul appel S3 pour
+la version offerte au lieu de sept.
+
+La composition de chaque version est déclarée dans **`lib/generate-pdf/deliverables.ts`**, et
+nulle part ailleurs. Le générateur ne fait que dérouler ce manifeste. C'est aussi là que vivent
+le libellé affiché (`label`) et le segment de nom de fichier (`fileSlug`) : le document téléchargé
+s'appelle `miroir-enmoi-version-complete_Prenom_Nom.pdf`, via `pdfFileName()`.
 
 Structure commune (pagination du client) :
 
@@ -553,6 +567,9 @@ des chantiers annexes qui cassent les chemins locaux, à faire plus tard en une 
 
 ## Conventions de code
 
+- Le produit s'appelle le **Miroir enMOI**, en trois **versions** : offerte, découverte, complète.
+  Jamais « livrable » ni « freemium » dans un texte lu par quelqu'un — voir « Vocabulaire » plus
+  haut. Les identifiants techniques, eux, ne changent pas.
 - La marque s'écrit **`enMOI`** — « en » en minuscules, « MOI » en capitales — partout où elle est
   lue par quelqu'un : textes d'interface, `metadata`, e-mails, `alt` d'images. Jamais « EnMoi »
   ni « Enmoi ». Les identifiants techniques déjà en place gardent leur casse (`--enmoi-ink`,

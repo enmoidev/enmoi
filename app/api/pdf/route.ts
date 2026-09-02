@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { generatePdf } from "@/lib/generate-pdf/generatePdf";
-import { DELIVERABLES, DELIVERABLE_IDS } from "@/lib/generate-pdf/deliverables";
+import { DELIVERABLES, DELIVERABLE_IDS, pdfFileName } from "@/lib/generate-pdf/deliverables";
 import {
   buildBirthVariables,
   evaluateForceNumber,
@@ -180,7 +180,7 @@ export async function POST(req: Request) {
     };
     const pdfBuffer = await generatePdf(pdfData);
 
-    const fileName = `${deliverableId}_${firstName}_${lastName}.pdf`.replace(/[^\w.-]/g, "_");
+    const fileName = pdfFileName(DELIVERABLES[deliverableId], firstName, lastName);
 
     return new NextResponse(new Uint8Array(pdfBuffer), {
       headers: {

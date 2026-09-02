@@ -47,7 +47,16 @@ export type DeliverablePage = {
 export type Deliverable = {
   id: DeliverableId;
   /// Libellé affiché dans le back-office.
+  ///
+  /// Le produit s'appelle « Miroir enMOI » et se décline en trois versions.
+  /// Les identifiants (`freemium`, `livrable1`, `livrable2`) gardent leur nom
+  /// d'origine : ils ne s'affichent nulle part — voir « Vocabulaire » dans
+  /// CLAUDE.md.
   label: string;
+  /// Segment de nom du fichier téléchargé — sans accent ni espace, pour rester
+  /// lisible quel que soit le système qui le recevra. Déclaré plutôt que dérivé
+  /// du libellé : une translittération du français est une source de surprises.
+  fileSlug: string;
   /// Nombre de fiches de forces développées (2 pages chacune). Les 7 forces
   /// sont toujours calculées : la roue de la page 3 les nomme toutes.
   detailedForceCount: number;
@@ -81,7 +90,8 @@ export const DELIVERABLES: Readonly<Record<DeliverableId, Deliverable>> = {
   // méthode des 3 étapes (pages 9 à 14).
   freemium: {
     id: "freemium",
-    label: "Freemium",
+    label: "Version offerte",
+    fileSlug: "miroir-enmoi-version-offerte",
     detailedForceCount: 1,
     before: introPages("freemium"),
     after: [
@@ -98,7 +108,8 @@ export const DELIVERABLES: Readonly<Record<DeliverableId, Deliverable>> = {
   // qui renvoie au freemium ou invite à passer au livrable 2.
   livrable1: {
     id: "livrable1",
-    label: "Livrable 1 — Formule Découverte, Étape 1",
+    label: "Version découverte",
+    fileSlug: "miroir-enmoi-version-decouverte",
     detailedForceCount: 7,
     before: introPages("livrable1"),
     after: [{ asset: "livrable1/21-mon-evolution.png", overlay: "monEvolution" }],
@@ -108,7 +119,8 @@ export const DELIVERABLES: Readonly<Record<DeliverableId, Deliverable>> = {
   // complète des 3 étapes et ses tableaux de travail (21 à 35).
   livrable2: {
     id: "livrable2",
-    label: "Livrable 2 — Formule Complète, Méthode des 3 Étapes",
+    label: "Version complète",
+    fileSlug: "miroir-enmoi-version-complete",
     detailedForceCount: 7,
     before: introPages("livrable2"),
     after: [
@@ -137,6 +149,17 @@ export const DELIVERABLE_IDS = Object.keys(DELIVERABLES) as DeliverableId[];
 /// Le gabarit d'une page pour une personne donnée.
 export function pageAsset(page: DeliverablePage, data: PdfData): string {
   return typeof page.asset === "function" ? page.asset(data) : page.asset;
+}
+
+/// Nom du fichier téléchargé pour une personne.
+/// Les caractères hors [A-Za-z0-9_.-] sont remplacés : un prénom accentué ou
+/// composé ne doit pas produire un nom de fichier bancal.
+export function pdfFileName(
+  deliverable: Deliverable,
+  firstName: string,
+  lastName: string
+): string {
+  return `${deliverable.fileSlug}_${firstName}_${lastName}.pdf`.replace(/[^\w.-]/g, "_");
 }
 
 /// Nombre total de pages d'un livrable — pour l'annoncer dans le back-office.

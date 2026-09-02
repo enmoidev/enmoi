@@ -4,17 +4,17 @@ import DataManipulationPMI from "@/components/dataManipulation/DataManipulationP
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 export const metadata = {
-  title: "Générer un livrable",
+  title: "Générer un miroir",
 };
 
 export default function AdminPMIPage() {
   return (
     <>
       <AdminPageHeader
-        eyebrow="Livrable"
-        title="Générer un livrable"
+        eyebrow="Miroir enMOI"
+        title="Générer un miroir"
         backHref="/admin"
-        description="Le livrable d'une personne : pages d'introduction personnalisées, puis deux pages pour chacune de ses 7 forces."
+        description="Le Miroir enMOI d'une personne : pages d'introduction personnalisées, puis deux pages pour chacune de ses 7 forces."
       />
 
       <DataManipulationPMI />

@@ -546,7 +546,7 @@ function PageSlot({ force, page, busy, onUpload }: PageSlotProps) {
 
       {/* Pas de bouton « retirer » : les 100 forces sont livrées et le client ne
           fait que remplacer un visuel par une version plus récente. Vider une case
-          ne ferait que casser la génération du livrable. */}
+          ne ferait que casser la génération du miroir. */}
       {storedKey && (
         <Button
           type="button"

@@ -37,7 +37,7 @@ export default async function Home() {
 
             <p className="text-ink-muted mt-5 text-base leading-relaxed">
               Cet espace accueillera le site vitrine : la présentation de la démarche
-              inné-acquis, des 7 forces mentales et du livrable remis à chaque personne.
+              inné-acquis, des 7 forces mentales et du Miroir enMOI remis à chaque personne.
               Il reste à concevoir dans une prochaine étape.
             </p>
 

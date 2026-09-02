@@ -148,7 +148,7 @@ export default function DataManipulationFunctions() {
         </h2>
         <p className="text-ink-muted mt-2 text-sm">
           Sélectionnez une formule pour modifier son expression. La position
-          détermine le rôle symbolique imprimé dans le livrable.
+          détermine le rôle symbolique imprimé dans le miroir.
         </p>
 
         {/* ── Jeux de formules ──

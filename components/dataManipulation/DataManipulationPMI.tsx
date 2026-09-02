@@ -12,7 +12,12 @@ import { Label } from "../ui/label";
 import { forceRoles } from "@/components/admin/forceRoles";
 import type { ForceType } from "@/types/modelPrisma";
 import { isForceComplete } from "@/types/modelPrisma";
-import { DELIVERABLES, DELIVERABLE_IDS, pageCount } from "@/lib/generate-pdf/deliverables";
+import {
+  DELIVERABLES,
+  DELIVERABLE_IDS,
+  pageCount,
+  pdfFileName,
+} from "@/lib/generate-pdf/deliverables";
 import type { DeliverableId } from "@/types/pdf";
 
 /// Deux façons de choisir les 7 forces : par la date de naissance (réel) ou en
@@ -107,20 +112,20 @@ export default function DataManipulationPMI() {
       if (!res.ok) {
         const payload = await res.json().catch(() => null);
         throw new Error(
-          payload?.error ?? "La génération du livrable a échoué. Réessayez dans un instant."
+          payload?.error ?? "La génération du miroir a échoué. Réessayez dans un instant."
         );
       }
 
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
-      const fileName = `${deliverable}_${firstName}_${lastName}.pdf`;
+      const fileName = pdfFileName(DELIVERABLES[deliverable], firstName, lastName);
       link.href = url;
       link.download = fileName;
       link.click();
 
       setLastFileName(fileName);
-      toast.success("Livrable généré avec succès !");
+      toast.success("Miroir généré avec succès !");
     }
 
     catch (error) {
@@ -128,7 +133,7 @@ export default function DataManipulationPMI() {
       const message =
         error instanceof Error
           ? error.message
-          : "Une erreur est survenue lors de la génération du livrable.";
+          : "Une erreur est survenue lors de la génération du miroir.";
       setApiError(message);
       toast.error(message);
     }
@@ -152,10 +157,10 @@ export default function DataManipulationPMI() {
           déterminées par la date de naissance, ou choisies à la main pour un test.
         </p>
 
-        {/* Choix du livrable : c'est lui qui fixe la composition du document. */}
+        {/* Choix de la version : c'est elle qui fixe la composition du document. */}
         <div className="mt-5">
           <Label htmlFor="pmi-deliverable" className="pb-2">
-            Livrable
+            Version du Miroir enMOI
           </Label>
           <select
             id="pmi-deliverable"
@@ -331,7 +336,7 @@ export default function DataManipulationPMI() {
             ) : (
               <>
                 <FileDown aria-hidden="true" className="h-4 w-4" />
-                Générer le livrable
+                Générer le miroir
               </>
             )}
           </Button>
@@ -348,7 +353,7 @@ export default function DataManipulationPMI() {
           >
             <p className="text-destructive flex items-center gap-2 font-semibold">
               <TriangleAlert aria-hidden="true" className="h-4 w-4 shrink-0" />
-              Le livrable n&apos;a pas été généré
+              Le miroir n&apos;a pas été généré
             </p>
             <p className="text-destructive mt-2 text-sm">{apiError}</p>
             <Link

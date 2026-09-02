@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     template: "%s | enMOI",
   },
   description:
-    "enMOI accompagne le développement personnel à partir de l'inné et de l'acquis, et révèle les 7 forces mentales dans un livrable personnel.",
+    "enMOI accompagne le développement personnel à partir de l'inné et de l'acquis, et révèle les 7 forces mentales dans un Miroir enMOI personnel.",
   applicationName: "enMOI",
   authors: [{ name: "enMOI" }],
   // Aucun contenu public n'est encore publié : on n'indexe rien tant que le site

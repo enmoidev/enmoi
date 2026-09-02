@@ -38,7 +38,7 @@ export const adminNavItems: AdminNavItem[] = [
   },
   {
     href: "/admin/pmi",
-    label: "Générer un livrable",
+    label: "Générer un miroir",
     hint: "Document d'une personne",
     icon: FileDown,
   },
