@@ -143,8 +143,11 @@ export const PAGE_B_SYMBOLIC_ROLE: TextBox = {
 // ---------------------------------------------------------------------------
 
 // Le gabarit ne porte plus que les deux libellés, suivis d'un espace libre :
-//   « Je suis (prénom) : »
+//   « Je suis : »
 //   « Né(e) le : »
+// Le « (prénom) » qui suivait « Je suis » a disparu du gabarit le 03/09/2026 :
+// la valeur qu'on y pose le dit déjà. Le libellé s'en trouve raccourci de
+// 275 px, d'où le recalage du point de départ du prénom.
 // Le client a retiré le « à ______ (heure de naissance, si connue)* » qui suivait
 // la date : l'heure est désormais composée avec elle, et n'apparaît que si elle
 // est connue. Les valeurs se posent donc à la suite de leur libellé, alignées à
@@ -188,12 +191,12 @@ function coverLayout(firstNameXPx: number, birthLineXPx: number): CoverLayout {
   };
 }
 
-// Relevés sur les gabarits : bord droit de « Je suis (prénom) : » puis de
-// « Né(e) le : », plus une chasse d'espace.
+// Relevés sur les gabarits : bord droit de « Je suis : » puis de « Né(e) le : »,
+// plus une chasse d'espace de 17 px.
 export const COVER_LAYOUTS = {
-  freemium: coverLayout(749, 532),
-  livrable1: coverLayout(747, 529),
-  livrable2: coverLayout(749, 532),
+  freemium: coverLayout(491, 532),
+  livrable1: coverLayout(489, 530),
+  livrable2: coverLayout(491, 532),
 } as const;
 
 // ---------------------------------------------------------------------------

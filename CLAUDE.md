@@ -75,12 +75,16 @@ Structure commune (pagination du client) :
 | 9 / 21 | Guide / auto-bilan (p. 9 en freemium, 21 en livrable 2) | prénom dans le bandeau ocre |
 | 21 | « Mon évolution » (livrable 1) | prénom dans le bandeau ocre, à gauche du titre |
 
-La couverture ne porte plus que les libellés « Je suis (prénom) : » et « Né(e) le : », suivis
+La couverture ne porte plus que les libellés « Je suis : » et « Né(e) le : », suivis
 d'un espace libre : le client a retiré de son gabarit le « à ______ (heure de naissance, si
 connue)* » qui suivait la date. La ligne se compose donc à l'exécution — `04.07.1993`, ou
 `04.07.1993 à 14h25*` quand l'heure est connue. Sans heure, la ligne s'arrête après la date,
 sans « à » orphelin ; l'astérisque, qui renvoie à la note de bas de page toujours imprimée sur
 le gabarit, n'est posé qu'avec l'heure.
+
+Le « (prénom) » qui suivait « Je suis » a disparu du gabarit le 03/09/2026 — la valeur posée à sa
+suite le dit déjà. Le libellé s'en trouve raccourci de 275 px : les `xPx` de `COVER_LAYOUTS` ont
+été relevés à nouveau, ceux de la ligne de naissance sont inchangés.
 
 Vérifier les deux cas d'un coup :
 
